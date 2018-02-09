@@ -1,0 +1,80 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: docker
+---
+apiVersion: v1
+data:
+  # cat infra/certs/ingress-registry-dev.crt | base64
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN2RENDQWFRQ0NRRENvQ2gvUFNseUxqQU5CZ2txaGtpRzl3MEJBUXNGQURBZ01SNHdIQVlEVlFRRERCVmsKYjJOclpYSXRjbVZuYVhOMGNua3ViRzlqWVd3d0hoY05NVGd3TWpBM01UUXdNREF6V2hjTk1Ua3dNakEzTVRRdwpNREF6V2pBZ01SNHdIQVlEVlFRRERCVmtiMk5yWlhJdGNtVm5hWE4wY25rdWJHOWpZV3d3Z2dFaU1BMEdDU3FHClNJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFS0FvSUJBUUQyUHpWTUxMaGJCQSt1QnZzckVva3hYamJqSmx5MTY1RUsKVllhcmFlS2V4YlRxTS9RT0VHaWFUdVVvZWJNTmE3cnZpaGNUcmFaaDNvZ3pLMXVBUkRKeVU4SkRlZkRVQWhiQgo1TkU5b05zWmN4Y0lncXJ3T2puN1lUTmthWC8xVDJ0dkE0YU5mVjh2SEhvcVh4bzh0cmFEQi9iekpxL01SaXM1CnNPZDdKNzF6NDNUOTBSWmdXUE5tY0NpbCsxRFYwNDhHWWk0M2NNM2JrVDRteXNRelh6Tis0a05wTTJ2MW83ei8KTzRhbWxuU2NNSWR3eHgxSWlqckx3bGxEbDM3WE9NNDd3OE5wWGNIbzRNajArVlZycFVyN3hYUEpZNUV6WTZGTgovRUNlYk0vVFhqMXdUMk1STzFZamNLTFhYZnZ0TldmcTFZWDRwYWkvQmtUWnZLejhkUDRYQWdNQkFBRXdEUVlKCktvWklodmNOQVFFTEJRQURnZ0VCQUEyN2g3aGEyT3pQV050bkR6SUd6S1BLR3dxSCtmWWNVVFlVWlczT0xHdDcKby9BdlNXWG92QnJiTks0cXFsWE9SbWR3R1cwT3d3VVZES1J4UlNsdGFVTTFKK0lvbzV1R1pHVzRUZDRNbTNBRApsaHloeVh0bU5Rbyt6WWxDajZoRzcvWWszU2FUWEtmRllTQ0wwZFlBOVloTGhZVDNyZzBtY1pzTU1VWXhvdlIwCk9RZWVnTExFd29Ma1pjbGNYRXJZK1FzcCtFL2QxQVZTNVQ0ZUYyWTk5bkFCVGkzSnJGMlZFd1pWdXpjWkJKYkoKdXlBQlQwd1UzNVVzWGZTZ3BWeTBUVVBzelFZUXc0VkxGUmRKZUMrVzJSVHlyWHE5cXNldnR4UUp4R2lNQnVIbwpiODJ5elFnRk1naFVtMWNEZGMzTUdieTVqcjNOQnJNVTI5TjRsQy9RWWVRPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+  # cat infra/certs/ingress-registry-dev.key | base64
+  tls.key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2UUlCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktjd2dnU2pBZ0VBQW9JQkFRRDJQelZNTExoYkJBK3UKQnZzckVva3hYamJqSmx5MTY1RUtWWWFyYWVLZXhiVHFNL1FPRUdpYVR1VW9lYk1OYTdydmloY1RyYVpoM29negpLMXVBUkRKeVU4SkRlZkRVQWhiQjVORTlvTnNaY3hjSWdxcndPam43WVROa2FYLzFUMnR2QTRhTmZWOHZISG9xClh4bzh0cmFEQi9iekpxL01SaXM1c09kN0o3MXo0M1Q5MFJaZ1dQTm1jQ2lsKzFEVjA0OEdZaTQzY00zYmtUNG0KeXNRelh6Tis0a05wTTJ2MW83ei9PNGFtbG5TY01JZHd4eDFJaWpyTHdsbERsMzdYT000N3c4TnBYY0hvNE1qMAorVlZycFVyN3hYUEpZNUV6WTZGTi9FQ2ViTS9UWGoxd1QyTVJPMVlqY0tMWFhmdnROV2ZxMVlYNHBhaS9Ca1RaCnZLejhkUDRYQWdNQkFBRUNnZ0VBYjExZ3RrV1hUcHBFbVJqUktNYW1ReXh2dUVVV01yUUprVm5pb00wdlQwenMKcCtxOUdrc3pjMjN3MTJCS3FPd3F5OEJ3OVZaWVkvU25OalVLbWJTOTk5U0hpOHF2THNLUEZqdHNvZW1JalRidQptTXUza1JOVU82clcramQ0UmpJWHpVb1Q1Uk5wSTc1R1JibGkvVWhJdkhPeXJINjNqTFBEUXNFTnZ6WFd5WHlXCnY2amp2ajhtNFkrMTZhRS83RmY2N1lpeHlwdGRNK253VGxPU2JrTlBITklSaGJZUFVsT0xaQXNuZ3pTelpCSE4KckxGMi8zY0lNVy9MZGE5YU10ajVsbXpNR1ZlSTJXZHBxWHU4OEZ1eWF0Vm93OENZNUdCZ3d2RmlvV002NDdVSwppdE9KSVJna01qcXBxK0tTYldQTXRSRUlNVWMxeWNoSEY2QXpSRTJOMlFLQmdRRC9QWHpqZ3lJcXNLaEY0Y0s4CkN4TmRwNjR3QTZDZHk0Q2FES0NvQWdFcXRQNlpLc2JuQk5HOEJKMEdTSytLamZjT3ZyeEw0WXFIcll1WW9UeWgKYXJDSUJMUE9kZU9oL3hsUzRpWnBkdEFPN3RBMmxjbTZrK2o1aGhhaTFqL0xxMVp4MzdWMnVLbE5saG5VU1Y5ZwpQdFJoNTJzdG9RQ0RLOHRUcGt2WkRsaUdpd0tCZ1FEMit0M21NSjNLZmVqclZPdDJnUzNvNCtKb0p6WEtJY2RnCnVIZ3F6dnVCZWQ5Qnpjd3JDbW5vNzdiV0lidWk2OGNET1c0ai9oVG9PWHRadmkrVGNhdUU2dzlIVXRHQm1lcXMKdjVNUUR6QTY2aUFYanhlbTRvLzgvazFFYWdGQjU1MUN6YkVtTTV2MnVMbXRzOUNudU1zb1M3cVhlbVhqQ0o1bworWXJubWZva0pRS0JnRzFrTlBwdFlWOWFoMFFzRmdIeDNVTHVjc0V4VE0xVVFySERaN2VaNUZZaGJGekk4S1ppCmNtRmF1TkhRcFN1RTNMWDlHVWFNUzRzSzNpRjBPVUFWTWNPYUFGWWtRSU5WaWN6MEQvSnpjWWgwNGRnREtvcEUKaWowbk10eG5ac0FybHNrSFVBYXA3aVhLaHhkc3V1dk5BY2xVSGFOWXRaZUNWWXBzWTJXTHVIVXhBb0dBS1RXTQpodGIvelFTYk00RDAxTTRURWZQTUdDTEt0OUpSQ1JOZWdZNE5xdm5oeFlJSUdmcGYxNHovemRUTkVROFVJcmFYCmFRd0JBd3BzU1hvUlNDSEVRNlpRNDA2dlJGZWhMM2U3bXdkZHZjYkkyZ1YzSmRKUndoM1FXS1R6VnNMRm01cmsKZndKSGVMQXowd2JZdnROM21sNmdZSnY4bWhnYkRscnMwVjRBdmIwQ2dZRUFvUDd5N3NPcngzaUxWQVpBWW5HZAovRFBMUjk1Z0R5T1dOV01YNkIxODZ2NEE5UVFJRGNXaTR3cEJkRUxiTWxpNy9HZGRvOHc3UnArb0Q1Tm1saTF6CnNSd01BTzRwK3dBYVlQVkZzdi81ZXJLTUJKMXBZcjJmV01vQVo4MmRlTnJXQ1l6bzh6WUxMK054SEdlcEdydGsKdVJhdmtFN2trQmw0N0VDbitFaE5aQnc9Ci0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K
+kind: Secret
+metadata:
+  name: registry
+  namespace: docker
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry
+  namespace: docker
+spec:
+  selector:
+    app: registry
+  ports:
+    - protocol: TCP
+      port: 443
+      targetPort: 5000
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: registry
+  namespace: docker
+  annotations:
+    kubernetes.io/ingress.class: "tectonic"
+    ingress.kubernetes.io/rewrite-target: /
+    ingress.kubernetes.io/proxy-body-size: 1000m
+spec:
+  tls:
+  - hosts:
+      - docker-registry.local
+    secretName: registry
+  rules:
+  - host: docker-registry.local
+    http:
+      paths:
+      - backend:
+          serviceName: registry
+          servicePort: 443
+        path: /
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: registry
+  namespace: docker
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: registry
+    spec:
+      containers:
+      - name: registry
+        image: registry
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        - name: docker-data
+          mountPath: /var/lib/registry
+      volumes:
+        - name: docker-data
+          emptyDir: {}
+  selector:
+    matchLabels:
+      app: registry
