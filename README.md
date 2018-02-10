@@ -63,15 +63,18 @@ and then:
 curl -i localhost:8080
 ```
 
-### Publishing to Docker registry:
+### Deploying Docker Registry to Tectonic Cluster
 
 Run ammonite script to set up docker registry in Tectonic cluster:
 
 ```bash
-
+amm infra/scripts/setup-docker-registry.sc
 ```
 
-Then tag images published locally to be able to push them to cluster registry:
+
+### Publishing to in-cluster Docker Registry:
+
+Tag images published locally to be able to push them to cluster registry:
 
 ```bash
 docker tag hello-world-async:0.1.0-SNAPSHOT docker-registry.local/hello-world-async
