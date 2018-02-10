@@ -1,0 +1,57 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: microservices
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-world-sync
+  namespace: microservices
+spec:
+  selector:
+    app: hello-world-sync
+  ports:
+    - protocol: TCP
+      port: 443
+      targetPort: 8080
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: hello-world-sync
+  namespace: microservices
+  annotations:
+    kubernetes.io/ingress.class: "tectonic"
+    ingress.kubernetes.io/rewrite-target: /
+spec:
+  tls:
+  - hosts:
+      - hello-world-sync.local
+  rules:
+  - host: hello-world-sync.local
+    http:
+      paths:
+      - backend:
+          serviceName: hello-world-sync
+          servicePort: 443
+        path: /
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: hello-world-sync
+  namespace: microservices
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: hello-world-sync
+    spec:
+      containers:
+        - name: hello-world-sync
+          image: docker-registry.local/hello-world-sync
+          ports:
+            - containerPort: 8080

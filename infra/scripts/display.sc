@@ -1,11 +1,14 @@
 import java.io.PrintStream
 
-case class ProgressBar(val ps: PrintStream, namespace: String = "", startingTask: String = "Starting!") extends Thread {
+case class ProgressBar(private val ps: PrintStream,
+                       private val namespace: String = "",
+                       private val startingTask: String = "Starting!") extends Thread {
 
-  @volatile var showProgress = true
-  @volatile var currentTask = startingTask
+  @volatile private var showProgress = true
+  @volatile private var currentTask = startingTask
+  @volatile private var currentNamespace = namespace
 
-  private val formattedNamespace = if (namespace.length > 0) s" $namespace:" else ""
+  private def formattedNamespace = if (currentNamespace.length > 0) s" $currentNamespace:" else ""
 
   override def run(): Unit = {
     val anim = "⢎⡰⢎⡡⢎⡑⢎⠱⠎⡱⢊⡱⢌⡱⢆⡱"
@@ -26,10 +29,27 @@ case class ProgressBar(val ps: PrintStream, namespace: String = "", startingTask
     }
   }
 
-  def finished(): Unit = {
-    showProgress = false
+  def stepInto(namespace: String): Unit = {
+    currentNamespace = namespace
+  }
+
+  def show(task: String): Unit = {
+    currentTask = task
+  }
+
+  def finishedNamespace(): Unit = {
     ps.print("\r" + Seq.fill(100)(" ").mkString)
     ps.print(s"\r ✓$formattedNamespace Done!\n")
+  }
+
+  def finished(): Unit = {
+    showProgress = false
+  }
+
+  def failed(): Unit = {
+    showProgress = false
+    ps.print("\r" + Seq.fill(100)(" ").mkString)
+    ps.print(s"\r x$formattedNamespace Failed!\n")
   }
 
 }
