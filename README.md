@@ -71,6 +71,14 @@ Run ammonite script to set up docker registry in Tectonic cluster:
 amm infra/scripts/setup-docker-registry.sc
 ```
 
+Docker Registry uses SSL with a self-signed certificate (present in `infra/certs`). While this script
+takes care of configuring Docker daemons running in Tectonic's VMs you still have to configure daemon
+on your local host machine. You have to copy the file `tectonic-1.7.5/provisioning/docker/daemon.json`
+to directory containing Docker daemon configuration on your system. Look [here](https://docs.docker.com/registry/insecure/)
+for path to modify (or UI segment to enter configuration if on Mac - word of warning here - if form for
+unsecure registries crashes daemon on startup in Docker for Mac you have to use `advanced` and manually
+modify the json  ¯\_(ツ)_/¯).
+
 
 ### Publishing to in-cluster Docker Registry:
 
