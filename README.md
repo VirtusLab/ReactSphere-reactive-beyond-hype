@@ -101,6 +101,13 @@ or
 docker push docker-registry.local/hello-world-async
 ```
 
+### [FUTURE] Publishing to AWS in-cluster Docker Registry:
+
+Sbt build can be parameterised with system property `docker.registry.host`, which allows to pass host of registry
+different than `docker-registry.local`. Docker daemon has to be signed in (via `docker login` command) to given 
+registry beforehand. After that it will be possible to use 
+`sbt -Ddocker.registry.host=https://prod.registry.domain.com docker:publish` to publish images to prod registry. 
+
 ### Running applications in cluster:
 
 If publishing to cluster registry went well you can deploy apps to k8s using this command:
