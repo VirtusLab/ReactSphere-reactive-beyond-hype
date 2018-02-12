@@ -20,10 +20,10 @@ lazy val commonSettings = Seq(
   dockerRepository    := Some(System.getProperty("docker.registry.host", "docker-registry.local")),
 
   javaOptions in Universal ++= Seq(
-    "-XX:+UnlockExperimentalVMOptions",
-    "-XX:+UseCGroupMemoryLimitForHeap",
-    "-XX:MaxRAMFraction=1",
-    "-XshowSettings:vm",
+    "-J-XX:+UnlockExperimentalVMOptions",
+    "-J-XX:+UseCGroupMemoryLimitForHeap",
+    "-J-XX:MaxRAMFraction=1",
+    "-J-XshowSettings:vm",
     s"-Dservice.version=${version.value}"
   )
 )
@@ -52,14 +52,18 @@ lazy val helloWorldAsync = (project in file("hello-world-async"))
     commonSettings,
     name := "hello-world-async",
     libraryDependencies ++= Seq(
-      "com.typesafe.akka" %% "akka-http"            % AkkaHttpVersion,
-      "com.typesafe.akka" %% "akka-http-spray-json" % AkkaHttpVersion,
-      "com.typesafe.akka" %% "akka-stream"          % AkkaVersion,
+      "com.typesafe.akka"          %% "akka-http"            % AkkaHttpVersion,
+      "com.typesafe.akka"          %% "akka-http-spray-json" % AkkaHttpVersion,
+      "com.typesafe.akka"          %% "akka-stream"          % AkkaVersion,
 
-      "com.typesafe.akka" %% "akka-http-testkit"    % AkkaHttpVersion   % Test,
-      "com.typesafe.akka" %% "akka-testkit"         % AkkaVersion       % Test,
-      "com.typesafe.akka" %% "akka-stream-testkit"  % AkkaVersion       % Test,
-      "org.scalatest"     %% "scalatest"            % "3.0.1"           % Test
+      "org.slf4j"                  %  "slf4j-api"            % "1.7.22",
+      "ch.qos.logback"             %  "logback-classic"      % "1.1.7",
+      "com.typesafe.scala-logging" %% "scala-logging"        % "3.5.0",
+
+      "com.typesafe.akka"          %% "akka-http-testkit"    % AkkaHttpVersion   % Test,
+      "com.typesafe.akka"          %% "akka-testkit"         % AkkaVersion       % Test,
+      "com.typesafe.akka"          %% "akka-stream-testkit"  % AkkaVersion       % Test,
+      "org.scalatest"              %% "scalatest"            % "3.0.1"           % Test
     ),
     dockerCommands ++= installBashCommands
   )

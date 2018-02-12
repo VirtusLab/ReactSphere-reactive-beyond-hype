@@ -53,5 +53,8 @@ spec:
       containers:
         - name: hello-world-async
           image: docker-registry.local/hello-world-async
+          resources:
+            limits:
+              memory: "128Mi"
           ports:
             - containerPort: 8080

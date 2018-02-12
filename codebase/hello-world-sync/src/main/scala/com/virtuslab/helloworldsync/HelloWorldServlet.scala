@@ -8,6 +8,9 @@ class HelloWorldServlet extends ScalatraServlet with JacksonJsonSupport {
 
   protected implicit lazy val jsonFormats: Formats = DefaultFormats
 
+  private lazy val version = System.getProperty("service.version", "unknown")
+
+  case class Status(version: String = version)
   case class HelloWorld(message: String = "Hello World!")
 
   before() {
@@ -16,6 +19,10 @@ class HelloWorldServlet extends ScalatraServlet with JacksonJsonSupport {
 
   get("/") {
     HelloWorld()
+  }
+
+  get("/_status") {
+    Status()
   }
 
 }
