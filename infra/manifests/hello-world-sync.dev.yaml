@@ -55,6 +55,6 @@ spec:
           image: docker-registry.local/hello-world-sync
           resources:
             limits:
-              memory: "128Mi"
+              memory: "192Mi"
           ports:
             - containerPort: 8080
