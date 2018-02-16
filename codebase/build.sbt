@@ -28,6 +28,13 @@ lazy val commonSettings = Seq(
   )
 )
 
+lazy val commons = (project in file("commons"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.github.t3hnar" %% "scala-bcrypt" % "3.1"
+    )
+  )
+
 lazy val helloWorldSync = (project in file("hello-world-sync"))
   .settings(
     commonSettings,
@@ -46,6 +53,30 @@ lazy val helloWorldSync = (project in file("hello-world-sync"))
     dockerCommands ++= installBashCommands
   )
   .enablePlugins(ScalatraPlugin, JavaAppPackaging, DockerPlugin, GitVersioning)
+  .dependsOn(commons)
+
+lazy val auctionHousePrimaryAsync = (project in file("auction-house-primary-async"))
+  .settings(
+    commonSettings,
+    name := "auction-house-primary-async",
+    libraryDependencies ++= Seq(
+      "com.typesafe.akka"          %% "akka-http"            % AkkaHttpVersion,
+      "com.typesafe.akka"          %% "akka-http-spray-json" % AkkaHttpVersion,
+      "com.typesafe.akka"          %% "akka-stream"          % AkkaVersion,
+
+      "org.slf4j"                  %  "slf4j-api"            % "1.7.22",
+      "ch.qos.logback"             %  "logback-classic"      % "1.1.7",
+      "com.typesafe.scala-logging" %% "scala-logging"        % "3.5.0",
+
+      "com.typesafe.akka"          %% "akka-http-testkit"    % AkkaHttpVersion   % Test,
+      "com.typesafe.akka"          %% "akka-testkit"         % AkkaVersion       % Test,
+      "com.typesafe.akka"          %% "akka-stream-testkit"  % AkkaVersion       % Test,
+      "org.scalatest"              %% "scalatest"            % "3.0.1"           % Test
+    ),
+    dockerCommands ++= installBashCommands
+  )
+  .enablePlugins(JavaAppPackaging, DockerPlugin, GitVersioning)
+  .dependsOn(commons)
 
 lazy val helloWorldAsync = (project in file("hello-world-async"))
   .settings(
@@ -68,6 +99,7 @@ lazy val helloWorldAsync = (project in file("hello-world-async"))
     dockerCommands ++= installBashCommands
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin, GitVersioning)
+  .dependsOn(commons)
 
 lazy val root = (project in file("."))
   .settings(
