@@ -14,6 +14,6 @@ package object identity {
     def validatePassword(password: String): Boolean = password isBcrypted passwordHash
   }
 
-  case class Token(token: String)
+  case class TokenResponse(token: String)
 
 }
