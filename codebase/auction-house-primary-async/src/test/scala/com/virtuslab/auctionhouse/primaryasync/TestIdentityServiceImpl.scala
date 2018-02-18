@@ -34,4 +34,7 @@ trait TestIdentityServiceImpl extends IdentityService {
       .flatMap { passwordCorrect => if (passwordCorrect) Some(CorrectTestToken) else None }
       .fold[Future[String]](failed(FailedSignIn(request.username)))(successful)
 
+  def validateToken(token: String): Future[Option[String]] =
+    if (token == "valid-token") successful(Some("testuser"))
+    else successful(None)
 }
