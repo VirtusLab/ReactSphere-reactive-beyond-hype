@@ -31,7 +31,9 @@ lazy val commonSettings = Seq(
 lazy val commons = (project in file("commons"))
   .settings(
     libraryDependencies ++= Seq(
-      "com.github.t3hnar" %% "scala-bcrypt" % "3.1"
+      "com.github.t3hnar" %% "scala-bcrypt" % "3.1",
+      "com.datastax.cassandra" % "cassandra-driver-core" % "3.4.0",
+      "com.datastax.cassandra" % "cassandra-driver-mapping" % "3.4.0"
     )
   )
 
@@ -49,6 +51,27 @@ lazy val helloWorldSync = (project in file("hello-world-sync"))
       "org.eclipse.jetty" %  "jetty-plus"         % "9.4.8.v20171121" % "container;compile",
       "javax.servlet"     %  "javax.servlet-api"  % "3.1.0"           % "provided",
       "org.json4s"        %% "json4s-jackson"     % "3.5.2"
+    ),
+    dockerCommands ++= installBashCommands
+  )
+  .enablePlugins(ScalatraPlugin, JavaAppPackaging, DockerPlugin, GitVersioning)
+  .dependsOn(commons)
+
+lazy val auctionHousePrimarySync = (project in file("auction-house-primary-sync"))
+  .settings(
+    commonSettings,
+    name := "auction-house-primary-sync",
+    resolvers += Classpaths.typesafeReleases,
+    libraryDependencies ++= Seq(
+      "org.scalatra"      %% "scalatra"           % ScalatraVersion,
+      "org.scalatra"      %% "scalatra-scalatest" % ScalatraVersion   % "test",
+      "org.scalatra"      %% "scalatra-json"      % ScalatraVersion,
+      "ch.qos.logback"    %  "logback-classic"    % "1.2.3"           % "runtime",
+      "org.eclipse.jetty" %  "jetty-webapp"       % "9.4.8.v20171121" % "container;compile",
+      "org.eclipse.jetty" %  "jetty-plus"         % "9.4.8.v20171121" % "container;compile",
+      "javax.servlet"     %  "javax.servlet-api"  % "3.1.0"           % "provided",
+      "org.json4s"        %% "json4s-jackson"     % "3.5.2",
+      "com.typesafe"      %  "config"             % "1.3.2"
     ),
     dockerCommands ++= installBashCommands
   )
@@ -108,4 +131,4 @@ lazy val root = (project in file("."))
     commonSettings,
     name := "beyond-the-hype-codebase",
   )
-  .aggregate(helloWorldSync, helloWorldAsync)
+  .aggregate(helloWorldSync, helloWorldAsync, auctionHousePrimarySync)

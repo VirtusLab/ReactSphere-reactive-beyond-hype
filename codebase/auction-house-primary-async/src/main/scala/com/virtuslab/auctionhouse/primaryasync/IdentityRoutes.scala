@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.StatusCodes.{BadRequest, Created, Unauthorized}
 import akka.http.scaladsl.server.Directives.{as, entity, failWith, onComplete, path, pathPrefix, post, _}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
-import com.virtuslab.identity.{CreateAccountRequest, SignInRequest, Token}
+import com.virtuslab.identity.{CreateAccountRequest, SignInRequest, TokenResponse}
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 import scala.util.{Failure, Success}
@@ -15,7 +15,7 @@ trait IdentityRoutes extends SprayJsonSupport with DefaultJsonProtocol with Rout
 
   implicit lazy val carFormat: RootJsonFormat[CreateAccountRequest] = jsonFormat2(CreateAccountRequest)
   implicit lazy val sirFormat: RootJsonFormat[SignInRequest] = jsonFormat2(SignInRequest)
-  implicit lazy val tokenFormat: RootJsonFormat[Token] = jsonFormat1(Token)
+  implicit lazy val tokenFormat: RootJsonFormat[TokenResponse] = jsonFormat1(TokenResponse)
 
   lazy val identityRoutes: Route =
     pathPrefix("api") {
@@ -35,7 +35,7 @@ trait IdentityRoutes extends SprayJsonSupport with DefaultJsonProtocol with Rout
             post {
               entity(as[SignInRequest]) { request =>
                 onComplete(signIn(request)) {
-                  case Success(token) => complete(Token(token))
+                  case Success(token) => complete(TokenResponse(token))
                   case Failure(_: FailedSignIn) => complete(Unauthorized, Error("wrong password or username"))
                   case Failure(exception) => failWith(exception)
                 }
