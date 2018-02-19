@@ -31,9 +31,9 @@ lazy val commonSettings = Seq(
 lazy val commons = (project in file("commons"))
   .settings(
     libraryDependencies ++= Seq(
-      "com.github.t3hnar" %% "scala-bcrypt" % "3.1",
-      "com.datastax.cassandra" % "cassandra-driver-core" % "3.4.0",
-      "com.datastax.cassandra" % "cassandra-driver-mapping" % "3.4.0"
+      "com.github.t3hnar"      %% "scala-bcrypt"             % "3.1",
+      "com.datastax.cassandra" %  "cassandra-driver-core"    % "3.4.0",
+      "com.datastax.cassandra" %  "cassandra-driver-mapping" % "3.4.0"
     )
   )
 
@@ -90,7 +90,6 @@ lazy val auctionHousePrimaryAsync = (project in file("auction-house-primary-asyn
       "org.slf4j"                  %  "slf4j-api"             % "1.7.22",
       "ch.qos.logback"             %  "logback-classic"       % "1.1.7",
       "com.typesafe.scala-logging" %% "scala-logging"         % "3.5.0",
-      "com.datastax.cassandra"     %  "cassandra-driver-core" % "3.3.0",
 
       "com.typesafe.akka"          %% "akka-http-testkit"     % AkkaHttpVersion   % Test,
       "com.typesafe.akka"          %% "akka-testkit"          % AkkaVersion       % Test,
