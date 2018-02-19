@@ -1,8 +1,14 @@
 package com.virtuslab.auctionhouse.primaryasync
 
+import java.sql.Timestamp
+import java.time.LocalDateTime
+import java.util.{Date, UUID}
+
+import com.datastax.driver.core.{ResultSet, Session}
+import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.virtuslab.identity._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait IdentityService {
 
@@ -19,11 +25,79 @@ trait IdentityService {
 }
 
 trait IdentityServiceImpl extends IdentityService {
+  this: CassandraClient =>
 
-  def createUser(request: CreateAccountRequest): Future[Unit] = ???
+  import AsyncUtils.Implicits._
 
-  def signIn(request: SignInRequest): Future[String] = ???
+  implicit def executionContext: ExecutionContext
 
-  def validateToken(token: String): Future[Option[String]] = ???
+  private lazy val sessionFuture: Future[Session] = getSessionAsync
+
+  def createUser(request: CreateAccountRequest): Future[Unit] = {
+    val user = request.createUser
+
+    val query = QueryBuilder.insertInto("microservices", "accounts")
+      .value("username", user.username)
+      .value("password", user.passwordHash)
+      .ifNotExists()
+
+    for {
+      session <- sessionFuture
+      rs <- session.executeAsync(query).asScala
+    } yield {
+      if (!rs.one.getBool("[applied]")) throw DuplicateUser(user.username)
+    }
+  }
+
+  def signIn(request: SignInRequest): Future[String] = {
+
+    def userOrMissingUser(username: String, passwordHashRs: ResultSet): Future[User] = Future {
+      val maybeRow = Option(passwordHashRs.one())
+      val passwordHash = maybeRow.map(_.get("password", classOf[String])).getOrElse {
+        throw FailedSignIn(username)
+      }
+
+      User(username, passwordHash)
+    }
+
+    val fetchUserQuery = QueryBuilder.select("password")
+      .from("microservices", "accounts")
+      .where(QueryBuilder.eq("username", request.username))
+
+    val token = UUID.randomUUID().toString
+    val timestamp = Timestamp.valueOf(LocalDateTime.now().plusHours(1L))
+
+    val insertTokenQuery = QueryBuilder.insertInto("microservices", "tokens")
+      .value("bearer_token", token)
+      .value("username", request.username)
+      .value("expires_at", timestamp)
+
+    for {
+      session <- sessionFuture
+      passwordHashRs <- session.executeAsync(fetchUserQuery).asScala
+      user <- userOrMissingUser(request.username, passwordHashRs)
+      _ <- session.executeAsync(insertTokenQuery).asScala
+    } yield {
+      if (user validatePassword request.password) token
+      else throw FailedSignIn(request.username)
+    }
+  }
+
+  def validateToken(token: String): Future[Option[String]] = {
+    val validateTokenQuery = QueryBuilder.select().all()
+        .from("microservices", "tokens")
+        .where(QueryBuilder.eq("bearer_token", token))
+
+    for {
+      session <- sessionFuture
+      tokenRs <- session.executeAsync(validateTokenQuery).asScala
+    } yield {
+      val now = new Date()
+      Option(tokenRs.one())
+        .filter(_.getTimestamp("expires_at") after now)
+        .map(_.getString("username"))
+    }
+
+  }
 
 }

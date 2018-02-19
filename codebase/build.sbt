@@ -60,18 +60,20 @@ lazy val auctionHousePrimaryAsync = (project in file("auction-house-primary-asyn
     commonSettings,
     name := "auction-house-primary-async",
     libraryDependencies ++= Seq(
-      "com.typesafe.akka"          %% "akka-http"            % AkkaHttpVersion,
-      "com.typesafe.akka"          %% "akka-http-spray-json" % AkkaHttpVersion,
-      "com.typesafe.akka"          %% "akka-stream"          % AkkaVersion,
+      "com.typesafe.akka"          %% "akka-http"             % AkkaHttpVersion,
+      "com.typesafe.akka"          %% "akka-http-spray-json"  % AkkaHttpVersion,
+      "com.typesafe.akka"          %% "akka-stream"           % AkkaVersion,
 
-      "org.slf4j"                  %  "slf4j-api"            % "1.7.22",
-      "ch.qos.logback"             %  "logback-classic"      % "1.1.7",
-      "com.typesafe.scala-logging" %% "scala-logging"        % "3.5.0",
+      "org.slf4j"                  %  "slf4j-api"             % "1.7.22",
+      "ch.qos.logback"             %  "logback-classic"       % "1.1.7",
+      "com.typesafe.scala-logging" %% "scala-logging"         % "3.5.0",
+      "com.datastax.cassandra"     %  "cassandra-driver-core" % "3.3.0",
 
-      "com.typesafe.akka"          %% "akka-http-testkit"    % AkkaHttpVersion   % Test,
-      "com.typesafe.akka"          %% "akka-testkit"         % AkkaVersion       % Test,
-      "com.typesafe.akka"          %% "akka-stream-testkit"  % AkkaVersion       % Test,
-      "org.scalatest"              %% "scalatest"            % "3.0.1"           % Test
+      "com.typesafe.akka"          %% "akka-http-testkit"     % AkkaHttpVersion   % Test,
+      "com.typesafe.akka"          %% "akka-testkit"          % AkkaVersion       % Test,
+      "com.typesafe.akka"          %% "akka-stream-testkit"   % AkkaVersion       % Test,
+      "org.scalatest"              %% "scalatest"             % "3.0.1"           % Test,
+      "org.cassandraunit"          %  "cassandra-unit"        % "3.3.0.2"         % Test
     ),
     dockerCommands ++= installBashCommands
   )
