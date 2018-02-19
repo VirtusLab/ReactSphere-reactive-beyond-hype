@@ -4,6 +4,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
+import com.virtuslab.cassandra.CassandraClientImpl
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 trait Routes extends SprayJsonSupport with DefaultJsonProtocol with IdentityRoutes with IdentityServiceImpl

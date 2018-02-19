@@ -1,19 +1,20 @@
-package com.virtuslab.auctionhouse.primaryasync
+package com.virtuslab.auctionhouse.cassandra
 
 import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.driver.core.{ResultSet, Session}
+import com.virtuslab.cassandra.CassandraClient
 import org.cassandraunit.CassandraCQLUnit
 import org.cassandraunit.dataset.cql.ClassPathCQLDataSet
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
-import org.scalatest._
+import org.scalatest.{Outcome, TestSuite, TestSuiteMixin}
 
 import scala.concurrent.Future
 
 trait CassandraIntegrationTest extends TestSuiteMixin with CassandraClient {
   this: TestSuite =>
 
-  import AsyncUtils.Implicits._
+  import com.virtuslab.AsyncUtils.Implicits._
 
   private val cassandraCQLUnit = new CassandraCQLUnit(new ClassPathCQLDataSet("schema.cql", "microservices"))
 

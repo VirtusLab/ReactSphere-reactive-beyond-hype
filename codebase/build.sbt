@@ -33,7 +33,9 @@ lazy val commons = (project in file("commons"))
     libraryDependencies ++= Seq(
       "com.github.t3hnar"      %% "scala-bcrypt"             % "3.1",
       "com.datastax.cassandra" %  "cassandra-driver-core"    % "3.4.0",
-      "com.datastax.cassandra" %  "cassandra-driver-mapping" % "3.4.0"
+      "com.datastax.cassandra" %  "cassandra-driver-mapping" % "3.4.0",
+      "org.scalatest"          %% "scalatest"                % "3.0.3"    % Test,
+      "org.cassandraunit"      %  "cassandra-unit"           % "3.3.0.2"  % Test
     )
   )
 
@@ -55,7 +57,7 @@ lazy val helloWorldSync = (project in file("hello-world-sync"))
     dockerCommands ++= installBashCommands
   )
   .enablePlugins(ScalatraPlugin, JavaAppPackaging, DockerPlugin, GitVersioning)
-  .dependsOn(commons)
+  .dependsOn(commons % "test->test;compile->compile")
 
 lazy val auctionHousePrimarySync = (project in file("auction-house-primary-sync"))
   .settings(
@@ -76,7 +78,7 @@ lazy val auctionHousePrimarySync = (project in file("auction-house-primary-sync"
     dockerCommands ++= installBashCommands
   )
   .enablePlugins(ScalatraPlugin, JavaAppPackaging, DockerPlugin, GitVersioning)
-  .dependsOn(commons)
+  .dependsOn(commons % "test->test;compile->compile")
 
 lazy val auctionHousePrimaryAsync = (project in file("auction-house-primary-async"))
   .settings(
@@ -93,14 +95,12 @@ lazy val auctionHousePrimaryAsync = (project in file("auction-house-primary-asyn
 
       "com.typesafe.akka"          %% "akka-http-testkit"     % AkkaHttpVersion   % Test,
       "com.typesafe.akka"          %% "akka-testkit"          % AkkaVersion       % Test,
-      "com.typesafe.akka"          %% "akka-stream-testkit"   % AkkaVersion       % Test,
-      "org.scalatest"              %% "scalatest"             % "3.0.1"           % Test,
-      "org.cassandraunit"          %  "cassandra-unit"        % "3.3.0.2"         % Test
+      "com.typesafe.akka"          %% "akka-stream-testkit"   % AkkaVersion       % Test
     ),
     dockerCommands ++= installBashCommands
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin, GitVersioning)
-  .dependsOn(commons)
+  .dependsOn(commons %"test->test;compile->compile")
 
 lazy val helloWorldAsync = (project in file("hello-world-async"))
   .settings(
@@ -117,13 +117,12 @@ lazy val helloWorldAsync = (project in file("hello-world-async"))
 
       "com.typesafe.akka"          %% "akka-http-testkit"    % AkkaHttpVersion   % Test,
       "com.typesafe.akka"          %% "akka-testkit"         % AkkaVersion       % Test,
-      "com.typesafe.akka"          %% "akka-stream-testkit"  % AkkaVersion       % Test,
-      "org.scalatest"              %% "scalatest"            % "3.0.1"           % Test
+      "com.typesafe.akka"          %% "akka-stream-testkit"  % AkkaVersion       % Test
     ),
     dockerCommands ++= installBashCommands
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin, GitVersioning)
-  .dependsOn(commons)
+  .dependsOn(commons % "test->test;compile->compile")
 
 lazy val root = (project in file("."))
   .settings(

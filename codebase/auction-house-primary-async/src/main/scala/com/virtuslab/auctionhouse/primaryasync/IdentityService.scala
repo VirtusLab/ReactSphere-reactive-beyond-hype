@@ -6,6 +6,7 @@ import java.util.{Date, UUID}
 
 import com.datastax.driver.core.{ResultSet, Session}
 import com.datastax.driver.core.querybuilder.QueryBuilder
+import com.virtuslab.cassandra.CassandraClient
 import com.virtuslab.identity._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,7 +28,7 @@ trait IdentityService {
 trait IdentityServiceImpl extends IdentityService {
   this: CassandraClient =>
 
-  import AsyncUtils.Implicits._
+  import com.virtuslab.AsyncUtils.Implicits._
 
   implicit def executionContext: ExecutionContext
 

@@ -1,4 +1,4 @@
-package com.virtuslab.auctionhouse.primaryasync
+package com.virtuslab.cassandra
 
 import com.datastax.driver.core.Session
 

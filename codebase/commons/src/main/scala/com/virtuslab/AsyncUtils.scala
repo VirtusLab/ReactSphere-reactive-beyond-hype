@@ -1,4 +1,4 @@
-package com.virtuslab.auctionhouse.primaryasync
+package com.virtuslab
 
 import com.google.common.util.concurrent.{FutureCallback, Futures, ListenableFuture}
 

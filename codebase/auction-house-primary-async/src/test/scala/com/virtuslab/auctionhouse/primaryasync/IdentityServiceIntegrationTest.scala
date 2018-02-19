@@ -1,5 +1,6 @@
 package com.virtuslab.auctionhouse.primaryasync
 
+import com.virtuslab.auctionhouse.cassandra.CassandraIntegrationTest
 import com.virtuslab.identity.{CreateAccountRequest, SignInRequest}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{GivenWhenThen, Matchers, OptionValues, WordSpec}
