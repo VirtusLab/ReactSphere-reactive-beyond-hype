@@ -10,7 +10,7 @@ import org.scalatra.{BadRequest, Created, ScalatraServlet}
 class AccountsServlet extends ScalatraServlet with JacksonJsonSupport {
   override protected implicit def jsonFormats: Formats = DefaultFormats
 
-  val accountMapper = CassandraSession.mappingManager.mapper(classOf[Account])
+  lazy val accountMapper = CassandraSession.mappingManager.mapper(classOf[Account])
 
   post("/") {
     val accountRequest = parsedBody.extract[CreateAccountRequest]

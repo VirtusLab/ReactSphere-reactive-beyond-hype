@@ -13,8 +13,8 @@ import org.scalatra.json.JacksonJsonSupport
 class SignInServlet extends ScalatraServlet with JacksonJsonSupport {
   override protected implicit def jsonFormats: Formats = DefaultFormats
 
-  val tokensMapper = CassandraSession.mappingManager.mapper(classOf[Token])
-  val accountsMapper = CassandraSession.mappingManager.mapper(classOf[Account])
+  lazy val tokensMapper = CassandraSession.mappingManager.mapper(classOf[Token])
+  lazy val accountsMapper = CassandraSession.mappingManager.mapper(classOf[Account])
 
   post("/") {
     val signInReq = parsedBody.extract[SignInRequest]

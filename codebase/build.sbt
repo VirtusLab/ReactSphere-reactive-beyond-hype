@@ -73,7 +73,8 @@ lazy val auctionHousePrimarySync = (project in file("auction-house-primary-sync"
       "org.eclipse.jetty" %  "jetty-plus"         % "9.4.8.v20171121" % "container;compile",
       "javax.servlet"     %  "javax.servlet-api"  % "3.1.0"           % "provided",
       "org.json4s"        %% "json4s-jackson"     % "3.5.2",
-      "com.typesafe"      %  "config"             % "1.3.2"
+      "com.typesafe"      %  "config"             % "1.3.2",
+      "org.mockito"       % "mockito-core"        % "2.15.0"          % Test
     ),
     dockerCommands ++= installBashCommands
   )
