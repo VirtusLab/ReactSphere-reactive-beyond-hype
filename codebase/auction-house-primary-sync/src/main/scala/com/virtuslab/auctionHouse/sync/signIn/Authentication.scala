@@ -2,22 +2,23 @@ package com.virtuslab.auctionHouse.sync.signIn
 
 import java.util.Date
 
-import com.virtuslab.auctionHouse.sync.cassandra.{Account, CassandraSession, Token}
+import com.virtuslab.auctionHouse.sync.cassandra.{Account, SessionManager, Token}
 import org.scalatra.ScalatraBase
+import com.virtuslab.auctionHouse.sync.cassandra.SessionManager.ScalaMapper
 
 trait Authentication extends ScalatraBase {
 
-  lazy val tokensMapper = CassandraSession.mappingManager.mapper(classOf[Token])
-  lazy val accountsMapper = CassandraSession.mappingManager.mapper(classOf[Account])
+  lazy val tokensMapper = SessionManager.mapper(classOf[Token])
+  lazy val accountsMapper = SessionManager.mapper(classOf[Account])
 
   private val AUTHORIZATION_KEYS = Seq("Authorization", "HTTP_AUTHORIZATION", "X-HTTP_AUTHORIZATION",
     "X_HTTP_AUTHORIZATION")
 
   def auth[T](fun: Account => T): T = {
     val account = getToken.flatMap { requestedToken =>
-      Option(tokensMapper.get(requestedToken))
+      tokensMapper.getOption(requestedToken)
         .filter(_.expires_at.compareTo(new Date()) > 0)
-        .flatMap(t => Option(accountsMapper.get(t.username)))
+        .flatMap(t => accountsMapper.getOption(t.username))
     }.getOrElse(halt(status = 401))
     fun(account)
   }

@@ -33,5 +33,7 @@ class TestableAccountsServlet extends AccountsServlet {
   when(mapperMock.get("u1")).thenReturn(null)
   when(mapperMock.get("u2")).thenReturn(new Account("u2", "p2"))
 
-  override lazy val accountMapper: Mapper[Account] = mapperMock
+  override lazy val accountService = new AccountService {
+    override lazy val accountMapper: Mapper[Account] = mapperMock
+  }
 }
