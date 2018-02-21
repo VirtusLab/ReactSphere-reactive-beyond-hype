@@ -1,6 +1,6 @@
 package com.virtuslab.auctionHouse.sync
 
-import java.util.Date
+import java.util.{Date, UUID}
 
 import com.datastax.driver.mapping.annotations.{PartitionKey, Table}
 import com.virtuslab.identity.CreateAccountRequest
@@ -11,7 +11,7 @@ package object cassandra {
 
   import com.github.t3hnar.bcrypt._
 
-  @Table(keyspace = "auction_house", name = "accounts")
+  @Table(name = "accounts")
   class Account(@(PartitionKey @field) val username: String, val password: String) {
 
     def this() {
@@ -25,11 +25,18 @@ package object cassandra {
   }
 
 
-  @Table(keyspace = "auction_house", name = "tokens")
+  @Table(name = "tokens")
   class Token(@(PartitionKey @field) val token: String, val username: String, val expires_at: Date) {
     def this() {
       this(null, null, null)
     }
   }
 
+  @Table(name = "auctions")
+  class Auction(@(PartitionKey @field) val auction_id: UUID, val owner: String, val title: String,
+                val description: String, val details: String, val minimum_price: java.math.BigDecimal) {
+    def this() {
+      this(null, null, null, null, null, null)
+    }
+  }
 }

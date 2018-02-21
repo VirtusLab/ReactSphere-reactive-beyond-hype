@@ -39,6 +39,6 @@ trait CassandraIntegrationTest extends TestSuiteMixin with CassandraClient {
 
   override def getSessionAsync: Future[Session] = cassandraCQLUnit.getCluster.connectAsync().asScala
 
-  def fetch(table: String): ResultSet = getSession.execute(QueryBuilder.select().all().from("microservices", table))
+  def fetch(table: String): ResultSet = getSession.execute(QueryBuilder.select().all().from(keyspace, table))
 
 }
