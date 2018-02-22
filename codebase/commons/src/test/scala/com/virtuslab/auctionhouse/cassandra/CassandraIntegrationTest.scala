@@ -14,9 +14,11 @@ import scala.concurrent.Future
 trait CassandraIntegrationTest extends TestSuiteMixin with CassandraClient {
   this: TestSuite =>
 
+  val keyspace = "microservices"
+
   import com.virtuslab.AsyncUtils.Implicits._
 
-  private val cassandraCQLUnit = new CassandraCQLUnit(new ClassPathCQLDataSet("schema.cql", "microservices"))
+  private val cassandraCQLUnit = new CassandraCQLUnit(new ClassPathCQLDataSet("schema.cql", keyspace))
 
   abstract override def withFixture(test: NoArgTest): Outcome = {
     var outcome: Outcome = null
@@ -37,6 +39,6 @@ trait CassandraIntegrationTest extends TestSuiteMixin with CassandraClient {
 
   override def getSessionAsync: Future[Session] = cassandraCQLUnit.getCluster.connectAsync().asScala
 
-  def fetch(table: String): ResultSet = getSession.execute(QueryBuilder.select().all().from("microservices", table))
+  def fetch(table: String): ResultSet = getSession.execute(QueryBuilder.select().all().from(keyspace, table))
 
 }

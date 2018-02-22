@@ -22,12 +22,12 @@ object CassandraSchema {
   def generateSchema: Unit = {
     cmds.foreach { cmd =>
       log.info(s"Executing cmd:\n$cmd")
-      CassandraSession.session.execute(cmd)
+      SessionManager.session.execute(cmd)
     }
   }
 
   def recreateSchema: Unit = {
-    CassandraSession.session.execute("DROP KEYSPACE auction_house")
+    SessionManager.session.execute("DROP KEYSPACE auction_house")
     generateSchema
   }
 }
