@@ -25,7 +25,9 @@ lazy val commonSettings = Seq(
     "-J-XX:MaxRAMFraction=1",
     "-J-XshowSettings:vm",
     s"-Dservice.version=${version.value}"
-  )
+  ),
+
+  fork in Test := true
 )
 
 lazy val commons = (project in file("commons"))
