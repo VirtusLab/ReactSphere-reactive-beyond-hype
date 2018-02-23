@@ -17,14 +17,16 @@ CREATE TABLE microservices.tokens (
 );
 
 CREATE TABLE microservices.auctions (
-    auction_id timeuuid,
+    category text,
+    created_at timestamp,
+    auction_id uuid,
     owner text,
     title text,
     description text,
     details text,
     minimum_price decimal,
-    PRIMARY KEY (auction_id)
-);
+    PRIMARY KEY (category, created_at, auction_id)
+) WITH CLUSTERING ORDER BY (created_at DESC);
 
 CREATE TABLE microservices.bids (
     auction_id timeuuid,

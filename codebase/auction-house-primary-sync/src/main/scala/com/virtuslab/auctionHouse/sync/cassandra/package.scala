@@ -33,10 +33,23 @@ package object cassandra {
   }
 
   @Table(name = "auctions")
-  class Auction(@(PartitionKey @field) val auction_id: UUID, val owner: String, val title: String,
+  class Auction(@(PartitionKey @field)(0) val category: String, @(PartitionKey @field)(1) val created_at: Date,
+                @(PartitionKey @field)(2) val auction_id: UUID, val owner: String, val title: String,
                 val description: String, val details: String, val minimum_price: java.math.BigDecimal) {
     def this() {
-      this(null, null, null, null, null, null)
+      this(null, null, null, null, null, null, null, null)
     }
   }
+
+  val Categories = Vector(
+    "motorization",
+    "garden",
+    "furniture",
+    "home appliances",
+    "electronics",
+    "pets & animals",
+    "clothing",
+    "groceries",
+    "health & beauty"
+  )
 }
