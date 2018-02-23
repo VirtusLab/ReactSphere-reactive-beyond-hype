@@ -1,11 +1,13 @@
 package com.virtuslab.auctionHouse.sync.auctions
 
-import java.util.UUID
+import java.util.{Date, UUID}
 
 import com.datastax.driver.mapping.Mapper
-import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.InvalidCategoryException
-import com.virtuslab.auctionHouse.sync.cassandra.{Auction, Categories, SessionManager}
+import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.{InvalidCategoryException, UnknownOwnerException}
+import com.virtuslab.auctionHouse.sync.cassandra.{Account, Auction, Categories, SessionManager}
+import com.virtuslab.auctionHouse.sync.commons.ServletModels.CreateAuctionRequest
 import com.virtuslab.auctionhouse.cassandra.CassandraIntegrationTest
+import org.json4s.jackson.JsonMethods.parse
 import org.scalatest.{Matchers, WordSpec}
 
 class AuctionsServiceIntegrationTest extends WordSpec with CassandraIntegrationTest with Matchers {
@@ -16,6 +18,7 @@ class AuctionsServiceIntegrationTest extends WordSpec with CassandraIntegrationT
 
   val auctionsService = new AuctionsService {
     override lazy val auctionsMapper: Mapper[Auction] = sessionManager.mapper(classOf[Auction])
+    override lazy val accountsMapper = sessionManager.mapper(classOf[Account])
     override lazy val session = sessionManager.session
   }
 
@@ -51,6 +54,30 @@ class AuctionsServiceIntegrationTest extends WordSpec with CassandraIntegrationT
       "category is unknown" in {
         intercept[InvalidCategoryException] {
           auctionsService.listAuctions("foo")
+        }
+      }
+    }
+  }
+
+
+  "Creating auctions" should {
+    "successfully create auction" when {
+      "correct data is provided" in {
+        val req = CreateAuctionRequest(Categories.head, "t1", "desc1", 1, parse("""{"details": "foo"}"""))
+        val beforeCreation = new Date().getTime
+        auctionsService.accountsMapper.save(new Account("o1", "p1"))
+        val id = auctionsService.createAuction(req, "o1")
+        id.category should equal(Categories.head)
+        id.createdAt should be <= new Date().getTime
+        id.createdAt should be >= beforeCreation
+      }
+    }
+
+    "throw exception" when {
+      "owner is invalid" in {
+        val req = CreateAuctionRequest(Categories.head, "t1", "desc1", 1, parse("""{"details": "foo"}"""))
+        intercept[UnknownOwnerException] {
+          auctionsService.createAuction(req, "foo_owner")
         }
       }
     }

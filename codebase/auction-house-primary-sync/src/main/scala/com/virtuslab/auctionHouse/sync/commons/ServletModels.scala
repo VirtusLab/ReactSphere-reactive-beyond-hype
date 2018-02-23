@@ -1,6 +1,7 @@
 package com.virtuslab.auctionHouse.sync.commons
 
 import com.virtuslab.auctionHouse.sync.cassandra.Auction
+import org.json4s.JValue
 
 object ServletModels {
   case class ErrorResponse(error: String)
@@ -17,4 +18,6 @@ object ServletModels {
       new Auctions(category, a.map(AuctionInfo(_)).toSeq)
     }
   }
+  case class CreateAuctionRequest(category: String, title: String, description: String, minimumPrice: BigDecimal,
+                                  details: JValue)
 }

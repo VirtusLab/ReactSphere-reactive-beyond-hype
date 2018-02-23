@@ -3,6 +3,7 @@ package com.virtuslab.auctionHouse.sync
 import java.util.{Date, UUID}
 
 import com.datastax.driver.mapping.annotations.{PartitionKey, Table}
+import com.virtuslab.auctionHouse.sync.commons.ServletModels.CreateAuctionRequest
 import com.virtuslab.identity.CreateAccountRequest
 
 import scala.annotation.meta.field
@@ -39,6 +40,16 @@ package object cassandra {
     def this() {
       this(null, null, null, null, null, null, null, null)
     }
+
+    def this(a: CreateAuctionRequest,  owner: String) = {
+      this(a.category, new Date(), UUID.randomUUID(), owner, a.title, a.description, a.details.toString,
+        a.minimumPrice.bigDecimal)
+    }
+
+    def id = AuctionId(category, created_at.getTime, auction_id)
+  }
+  case class AuctionId(category: String, createdAt: Long, auctionId: UUID) {
+    def idString = Seq(category, createdAt.toString, auctionId.toString).mkString(";")
   }
 
   val Categories = Vector(
