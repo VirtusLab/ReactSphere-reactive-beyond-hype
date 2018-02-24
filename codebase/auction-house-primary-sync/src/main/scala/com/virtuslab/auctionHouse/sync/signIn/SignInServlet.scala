@@ -13,6 +13,10 @@ import org.scalatra.json.JacksonJsonSupport
 class SignInServlet extends ScalatraServlet with JacksonJsonSupport {
   override protected implicit def jsonFormats: Formats = DefaultFormats
 
+  before() {
+    contentType = formats("json")
+  }
+
   lazy val tokensMapper = SessionManager.mapper(classOf[Token])
   lazy val accountsMapper = SessionManager.mapper(classOf[Account])
 
