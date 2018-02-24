@@ -1,7 +1,7 @@
 package com.virtuslab.auctionhouse.primaryasync
 
-import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
+import java.util.{Date, UUID}
 
 import spray.json.JsObject
 
@@ -19,18 +19,20 @@ trait TestAuctionServiceImpl extends AuctionService {
 
   def getCurrentBidId: String = currentBidId.get()
 
-  def addAuction(id: String, owner: String, title: String): Unit = {
-    auctions = auctions + (id -> AuctionResponse(id, owner, title, "", BigDecimal(0d), JsObject(), Nil))
+  def addAuction(category: String, id: String, owner: String, title: String, time: Long): Unit = {
+    auctions = auctions + (id -> AuctionResponse(category, id, time, owner, title, "", BigDecimal(0d), JsObject(), Nil))
   }
 
-  def addAuctionWithBids(id: String, owner: String, title: String, bids: List[Bid]): Unit = {
-    auctions = auctions + (id -> AuctionResponse(id, owner, title, "", BigDecimal(0d), JsObject(), bids))
+  def addAuctionWithBids(category: String, id: String, owner: String, title: String, bids: List[Bid], time: Long): Unit = {
+    auctions = auctions + (id -> AuctionResponse(category, id, time, owner, title, "", BigDecimal(0d), JsObject(), bids))
   }
 
   def createAuction(command: CreateAuction): Future[String] = {
     val auctionId = currentAuctionId.get()
     val auction = AuctionResponse(
+      category = command.category,
       auctionId = auctionId,
+      createdAt = (new Date).getTime,
       owner = command.owner,
       title = command.title,
       description = command.description,
@@ -45,10 +47,12 @@ trait TestAuctionServiceImpl extends AuctionService {
     successful(auctionId)
   }
 
-  def listAuctions: Future[List[AuctionInfo]] = successful {
-    auctions.values.toList.map {
-      case AuctionResponse(id, owner, title, _, mp, _, _) => AuctionInfo(id, owner, title, mp)
-    }
+  def listAuctions(category: String): Future[List[AuctionInfo]] = successful {
+    auctions.values.toList
+      .filter(_.category == category)
+      .map {
+        case AuctionResponse(_, id, timestamp, owner, title, _, mp, _, _) => AuctionInfo(id, timestamp, owner, title, mp)
+      }
   }
 
   def getAuction(auctionId: String): Future[AuctionResponse] = (auctions get auctionId)

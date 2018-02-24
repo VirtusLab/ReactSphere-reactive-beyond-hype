@@ -6,6 +6,7 @@ import java.util.{Date, UUID}
 
 import com.datastax.driver.core.{ResultSet, Session}
 import com.datastax.driver.core.querybuilder.QueryBuilder
+import com.datastax.driver.core.querybuilder.QueryBuilder.{insertInto, select, eq => equal}
 import com.virtuslab.cassandra.CassandraClient
 import com.virtuslab.identity._
 
@@ -37,7 +38,7 @@ trait IdentityServiceImpl extends IdentityService {
   def createUser(request: CreateAccountRequest): Future[Unit] = {
     val user = request.createUser
 
-    val query = QueryBuilder.insertInto("microservices", "accounts")
+    val query = insertInto("microservices", "accounts")
       .value("username", user.username)
       .value("password", user.passwordHash)
       .ifNotExists()
@@ -61,14 +62,14 @@ trait IdentityServiceImpl extends IdentityService {
       User(username, passwordHash)
     }
 
-    val fetchUserQuery = QueryBuilder.select("password")
+    val fetchUserQuery = select("password")
       .from("microservices", "accounts")
-      .where(QueryBuilder.eq("username", request.username))
+      .where(equal("username", request.username))
 
     val token = UUID.randomUUID().toString
     val timestamp = Timestamp.valueOf(LocalDateTime.now().plusHours(1L))
 
-    val insertTokenQuery = QueryBuilder.insertInto("microservices", "tokens")
+    val insertTokenQuery = insertInto("microservices", "tokens")
       .value("bearer_token", token)
       .value("username", request.username)
       .value("expires_at", timestamp)
@@ -85,9 +86,9 @@ trait IdentityServiceImpl extends IdentityService {
   }
 
   def validateToken(token: String): Future[Option[String]] = {
-    val validateTokenQuery = QueryBuilder.select().all()
+    val validateTokenQuery = select().all()
         .from("microservices", "tokens")
-        .where(QueryBuilder.eq("bearer_token", token))
+        .where(equal("bearer_token", token))
 
     for {
       session <- sessionFuture

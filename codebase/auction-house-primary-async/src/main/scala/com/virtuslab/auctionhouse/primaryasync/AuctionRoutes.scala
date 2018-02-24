@@ -15,18 +15,21 @@ import scala.util.{Failure, Success}
 trait AuctionRoutes extends SprayJsonSupport with DefaultJsonProtocol with RoutingUtils {
   this: AuctionService with IdentityHelpers =>
 
-  implicit lazy val cauctrFormat: RootJsonFormat[CreateAuctionRequest] = jsonFormat4(CreateAuctionRequest)
+  implicit lazy val cauctrFormat: RootJsonFormat[CreateAuctionRequest] = jsonFormat5(CreateAuctionRequest)
   implicit lazy val mteFormat: RootJsonFormat[MissingTokenError] = jsonFormat1(MissingTokenError)
   implicit lazy val iteFormat: RootJsonFormat[InvalidTokenError] = jsonFormat1(InvalidTokenError)
   implicit lazy val caFormat: RootJsonFormat[CreatedAuction] = jsonFormat1(CreatedAuction)
-  implicit lazy val aiFormat: RootJsonFormat[AuctionInfo] = jsonFormat4(AuctionInfo)
+  implicit lazy val aiFormat: RootJsonFormat[AuctionInfo] = jsonFormat5(AuctionInfo)
   implicit lazy val bidFormat: RootJsonFormat[Bid] = jsonFormat3(Bid)
-  implicit lazy val auctionsFormat: RootJsonFormat[Auctions] = jsonFormat1(Auctions)
-  implicit lazy val auctionFormat: RootJsonFormat[AuctionResponse] = jsonFormat7(AuctionResponse)
+  implicit lazy val auctionsFormat: RootJsonFormat[Auctions] = jsonFormat2(Auctions)
+  implicit lazy val auctionFormat: RootJsonFormat[AuctionResponse] = jsonFormat9(AuctionResponse)
   implicit lazy val bidReqFormat: RootJsonFormat[BidRequest] = jsonFormat1(BidRequest)
 
   implicit def rejectionHandler: RejectionHandler =
     RejectionHandler.newBuilder()
+      .handle { case MissingQueryParamRejection(_) =>
+        complete(BadRequest)
+      }
       .handle { case AuthenticationFailedRejection(cause, _) =>
         cause match {
           case CredentialsMissing => complete((Unauthorized, MissingTokenError()))
@@ -66,9 +69,11 @@ trait AuctionRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
                 } ~
                 path("auctions") {
                   get {
-                    onComplete(listAuctions) {
-                      case Success(listOfAuctions) => complete(OK, Auctions(listOfAuctions))
-                      case Failure(exception) => failWith(exception)
+                    parameter("category") { category =>
+                      onComplete(listAuctions(category)) {
+                        case Success(listOfAuctions) => complete(OK, Auctions(category, listOfAuctions))
+                        case Failure(exception) => failWith(exception)
+                      }
                     }
                   } ~
                     post {

@@ -1,8 +1,8 @@
 package com.virtuslab.cassandra
 
-import com.datastax.driver.core.Session
+import com.datastax.driver.core.{Cluster, Session}
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 
 trait CassandraClient {
 
@@ -12,6 +12,16 @@ trait CassandraClient {
 }
 
 trait CassandraClientImpl extends CassandraClient {
-  override def getSession: Session = ???
-  override def getSessionAsync: Future[Session] = ???
+
+  import com.virtuslab.AsyncUtils.Implicits._
+  import scala.concurrent.duration._
+
+  def cassandraContactPoint: String
+
+  private lazy val cluster = Cluster.builder().addContactPoint(cassandraContactPoint).build()
+  private lazy val sessionFuture = cluster.connectAsync("microservices").asScala
+
+  override def getSession: Session = Await.result(sessionFuture, 15.seconds)
+  override def getSessionAsync: Future[Session] = sessionFuture
+
 }

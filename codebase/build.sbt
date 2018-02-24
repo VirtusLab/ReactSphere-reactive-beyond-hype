@@ -36,6 +36,7 @@ lazy val commons = (project in file("commons"))
       "com.github.t3hnar"      %% "scala-bcrypt"             % "3.1",
       "com.datastax.cassandra" %  "cassandra-driver-core"    % "3.4.0",
       "com.datastax.cassandra" %  "cassandra-driver-mapping" % "3.4.0",
+      "com.typesafe"           %  "config"                   % "1.3.2",
       "org.scalatest"          %% "scalatest"                % "3.0.3"    % Test,
       "org.cassandraunit"      %  "cassandra-unit"           % "3.3.0.2"  % Test
     )
@@ -76,7 +77,7 @@ lazy val auctionHousePrimarySync = (project in file("auction-house-primary-sync"
       "javax.servlet"     %  "javax.servlet-api"  % "3.1.0"           % "provided",
       "org.json4s"        %% "json4s-jackson"     % "3.5.2",
       "com.typesafe"      %  "config"             % "1.3.2",
-      "org.mockito"       % "mockito-core"        % "2.15.0"          % Test
+      "org.mockito"       %  "mockito-core"       % "2.15.0"          % Test
     ),
     dockerCommands ++= installBashCommands
   )

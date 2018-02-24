@@ -1,12 +1,14 @@
 package com.virtuslab.auctionhouse.primaryasync
 
+import java.util.Date
+
 import akka.http.scaladsl.model.ContentTypes.`application/json`
 import akka.http.scaladsl.model.HttpMethods.{GET, POST}
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.virtuslab.identity.{CreateAccountRequest, SignInRequest}
+import com.virtuslab.identity.{CreateAccountRequest, SignInRequest, TokenResponse}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterEach, GivenWhenThen, Matchers, WordSpec}
 
@@ -48,7 +50,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       request ~> identityRoutes ~> check {
         status should ===(BadRequest)
         contentType should ===(`application/json`)
-        entityAs[String] should ===("""{"error":"user testuser already exists"}""")
+        entityAs[Error] should ===(Error("user testuser already exists"))
       }
     }
 
@@ -65,7 +67,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       request ~> identityRoutes ~> check {
         status should ===(OK)
         contentType should ===(`application/json`)
-        entityAs[String] should ===("""{"token":"f60e7614-0d56-4ef5-b6c8-3939d34d5ec2"}""")
+        entityAs[TokenResponse] should ===(TokenResponse("f60e7614-0d56-4ef5-b6c8-3939d34d5ec2"))
       }
     }
 
@@ -82,7 +84,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       invalidPasswordRequest ~> identityRoutes ~> check {
         status should ===(Unauthorized)
         contentType should ===(`application/json`)
-        entityAs[String] should ===("""{"error":"wrong password or username"}""")
+        entityAs[Error] should ===(Error("wrong password or username"))
       }
     }
 
@@ -90,9 +92,13 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
 
   "Auction module" should {
 
+    val now = (new Date).getTime
+    val aBitLater = now + 100L
+
     "reject auction creation requests if authentication token is missing" in {
       When("request to create an auction without authentication token is sent to auction api")
       val body = CreateAuctionRequest(
+        category = "test-category",
         title = "test auction",
         description = "some description",
         minimumPrice = BigDecimal(1.23d),
@@ -105,13 +111,14 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       request ~> auctionRoutes ~> check {
         status should ===(Unauthorized)
         contentType should ===(`application/json`)
-        entityAs[String] should ===("""{"error":"authentication token is missing"}""")
+        entityAs[Error] should ===(Error("authentication token is missing"))
       }
     }
 
     "reject auction creation request if authentication token is invalid" in {
       When("request to create an auction with invalid authentication token is sent to auction api")
       val body = CreateAuctionRequest(
+        category = "test-category",
         title = "test auction",
         description = "some description",
         minimumPrice = BigDecimal(1.23d),
@@ -125,7 +132,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       request ~> auctionRoutes ~> check {
         status should ===(Forbidden)
         contentType should ===(`application/json`)
-        entityAs[String] should ===("""{"error":"authentication token is invalid"}""")
+        entityAs[Error] should ===(Error("authentication token is invalid"))
       }
     }
 
@@ -133,6 +140,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       When("request to create an auction with valid authentication token is sent to auction api")
       val expectedAuctionId = getCurrentAuctionId
       val body = CreateAuctionRequest(
+        category = "test-category",
         title = "test auction",
         description = "some description",
         minimumPrice = BigDecimal(1.23d),
@@ -146,37 +154,50 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       request ~> auctionRoutes ~> check {
         status should ===(Created)
         contentType should ===(`application/json`)
-        entityAs[String] should ===(s"""{"auctionId":"$expectedAuctionId"}""")
+        entityAs[CreatedAuction] should ===(CreatedAuction(expectedAuctionId))
       }
     }
 
-    "list existing auctions when requested with correct authentication token" in {
+    "reject authenticated request for auctions list without category" in {
+      When("request to list auctions with valid authentication token but without category parameter is sent to auction api")
+      val authHeader = Authorization(OAuth2BearerToken("valid-token"))
+      val request = HttpRequest(uri = "/api/v1/auctions", method = GET)
+        .withHeaders(authHeader :: Nil)
+
+      Then("response should have 400 status")
+      request ~> auctionRoutes ~> check {
+        status should ===(BadRequest)
+      }
+    }
+
+    "list existing auctions for given category when requested with correct authentication token" in {
       Given("two auctions exist in auction api")
-      addAuction("au1", "testuser2", "auction 1")
-      addAuction("au2", "testuser3", "auction 2")
+      addAuction("test-category", "au1", "testuser2", "auction 1", now)
+      addAuction("test-category", "au2", "testuser3", "auction 2", aBitLater)
 
       When("request to list auctions with valid authentication token is sent to auction api")
       val authHeader = Authorization(OAuth2BearerToken("valid-token"))
-      val request = HttpRequest(uri = "/api/v1/auctions", method = GET)
+      val request = HttpRequest(uri = "/api/v1/auctions?category=test-category", method = GET)
         .withHeaders(authHeader :: Nil)
 
       Then("response should have 200 status and contain a list of auctions")
       request ~> auctionRoutes ~> check {
         status should ===(OK)
         contentType should ===(`application/json`)
-        entityAs[String] should ===(
-          s"""{"auctions":[
-             |{"auctionId":"au1","owner":"testuser2","title":"auction 1","minimumPrice":0.0},
-             |{"auctionId":"au2","owner":"testuser3","title":"auction 2","minimumPrice":0.0}
-             |]}""".stripMargin.filter(_ >= ' ')
-        )
+        entityAs[Auctions] should ===(Auctions(
+          category = "test-category",
+          List(
+            AuctionInfo("au1", now, "testuser2", "auction 1", BigDecimal(0)),
+            AuctionInfo("au2", aBitLater, "testuser3", "auction 2", BigDecimal(0))
+          )
+        ))
       }
     }
 
     "fetch existing auction when requested by id with correct authentication token" in {
       Given("two auctions exist in auction api")
-      addAuction("au1", "testuser2", "auction 1")
-      addAuction("au2", "testuser3", "auction 2")
+      addAuction("test-category", "au1", "testuser2", "auction 1", now)
+      addAuction("test-category", "au2", "testuser3", "auction 2", aBitLater)
 
       When("request to fetch auction with id au2 and with valid authentication token is sent to auction api")
       val authHeader = Authorization(OAuth2BearerToken("valid-token"))
@@ -186,17 +207,17 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       request ~> auctionRoutes ~> check {
         status should ===(OK)
         contentType should ===(`application/json`)
-        entityAs[String] should ===(
-          s"""{
-             |"description":"",
-             |"bids":[],
-             |"auctionId":"au2",
-             |"minimumPrice":0.0,
-             |"details":{},
-             |"owner":"testuser3",
-             |"title":"auction 2"
-             |}""".stripMargin.filter(_ >= ' ')
-        )
+        entityAs[AuctionResponse] should ===(AuctionResponse(
+          category = "test-category",
+          auctionId = "au2",
+          createdAt = aBitLater,
+          owner = "testuser3",
+          title = "auction 2",
+          description = "",
+          minimumPrice = BigDecimal(0),
+          details = JsObject(),
+          bids = List.empty
+        ))
       }
     }
 
@@ -215,7 +236,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
 
     "bid in existing auction without any previous bids with correct authentication token" in {
       Given("an auction exists in auction api")
-      addAuction("au1", "testuser2", "auction 1")
+      addAuction("test-category", "au1", "testuser2", "auction 1", now)
       val expectedBidId = getCurrentBidId
 
       When("request to bid in auction with with valid authentication token is sent to auction api")
@@ -236,23 +257,25 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       fetchAuctionRequest ~> auctionRoutes ~> check {
         status should ===(OK)
         contentType should ===(`application/json`)
-        entityAs[String] should ===(
-          s"""{
-             |"description":"",
-             |"bids":[{"bidId":"$expectedBidId","bidder":"testuser","amount":10.0}],
-             |"auctionId":"au1",
-             |"minimumPrice":0.0,
-             |"details":{},
-             |"owner":"testuser2",
-             |"title":"auction 1"
-             |}""".stripMargin.filter(_ >= ' ')
-        )
+        entityAs[AuctionResponse] should ===(
+          AuctionResponse(
+            category = "test-category",
+            auctionId = "au1",
+            createdAt = now,
+            owner = "testuser2",
+            title = "auction 1",
+            description = "",
+            minimumPrice = BigDecimal(0),
+            details = JsObject(),
+            bids = List(Bid(expectedBidId, "testuser", BigDecimal(10)))
+          ))
       }
     }
 
     "bid in existing auction with too small bid and with correct authentication token" in {
       Given("an auction exists in auction api and a bid with amount 15 for that auction exists")
-      addAuctionWithBids("au1", "testuser2", "auction 1", Bid("some-bid", "anotheruser", BigDecimal(15d)) :: Nil)
+      addAuctionWithBids("test-category", "au1", "testuser2", "auction 1",
+        Bid("some-bid", "anotheruser", BigDecimal(15d)) :: Nil, now)
 
       When("request to bid in auction with amount 10 is sent to auction api with valid authentication token")
       val authHeader = Authorization(OAuth2BearerToken("valid-token"))
@@ -264,7 +287,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       createBidRequest ~> auctionRoutes ~> check {
         status should ===(Conflict)
         contentType should ===(`application/json`)
-        entityAs[String] should ===("""{"error":"your bid is not high enough"}""")
+        entityAs[Error] should ===(Error("your bid is not high enough"))
       }
     }
 

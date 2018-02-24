@@ -17,19 +17,26 @@ CREATE TABLE microservices.tokens (
 );
 
 CREATE TABLE microservices.auctions (
-    auction_id timeuuid,
+    category text,
+    created_at timestamp,
+    auction_id uuid,
     owner text,
     title text,
     description text,
     details text,
     minimum_price decimal,
-    PRIMARY KEY (auction_id)
-);
+    PRIMARY KEY (category, created_at, auction_id)
+) WITH CLUSTERING ORDER BY (created_at DESC);
+
+CREATE MATERIALIZED VIEW microservices.auctions_view AS
+    SELECT * FROM microservices.auctions
+    WHERE auction_id IS NOT NULL AND created_at IS NOT NULL AND category IS NOT NULL
+    PRIMARY KEY (auction_id, created_at, category);
 
 CREATE TABLE microservices.bids (
-    auction_id timeuuid,
+    auction_id uuid,
     bid_id timeuuid,
     bidder text,
     amount decimal,
-    PRIMARY KEY ((auction_id, bid_id), bidder)
-) WITH CLUSTERING ORDER BY (bidder DESC);
+    PRIMARY KEY (auction_id, bid_id)
+);
