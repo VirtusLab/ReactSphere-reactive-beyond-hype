@@ -36,14 +36,14 @@ class AuctionsService {
 
   private def accountExists(username: String): Boolean = accountsMapper.getOption(username).isDefined
 
-  def createAuction(auctionRequest: CreateAuctionRequest, owner: String): AuctionId = {
+  def createAuction(auctionRequest: CreateAuctionRequest, owner: String): UUID = {
     assertCategory(auctionRequest.category)
     if (!accountExists(owner)) {
       throw new UnknownEntityException(s"Cannot find owner: $owner")
     }
     val auction = new Auction(auctionRequest, owner)
     auctionsMapper.save(auction)
-    auction.id
+    auction.auction_id
   }
 
   def getAuction(id: UUID): AuctionViewResponse = {

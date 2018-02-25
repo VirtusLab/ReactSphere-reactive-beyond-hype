@@ -46,8 +46,6 @@ package object cassandra {
       this(a.category, new Date(), UUID.randomUUID(), owner, a.title, a.description, compact(render(a.details)),
         a.minimumPrice.bigDecimal)
     }
-
-    def id = AuctionId(category, created_at.getTime, auction_id)
   }
 
   @Table(name = "auctions_view")
@@ -57,9 +55,6 @@ package object cassandra {
     def this() {
       this(null, null, null, null, null, null, null, null)
     }
-  }
-  case class AuctionId(category: String, createdAt: Long, auctionId: UUID) {
-    def idString = Seq(category, createdAt.toString, auctionId.toString).mkString(";")
   }
 
   @Table(name = "bids")

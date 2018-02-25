@@ -70,7 +70,7 @@ class AuctionsServletTest extends BaseServletTest(classOf[TestableAuctionsServle
           s"""{ "category": "c1", "title": "t1", "description": "d1", "minimumPrice": 1,
              | "details": {"some": "details"} }""".stripMargin, jsonHeader) {
           status should equal(Ok().status)
-          body should equal(AuctionId(Categories.head, 1, TestableAuctionsServlet.auctionUuid).idString)
+          body should equal(TestableAuctionsServlet.auctionUuid.toString)
         }
       }
     }
@@ -130,8 +130,8 @@ class TestableAuctionsServlet extends AuctionsServlet {
     override lazy val auctionsMapper = mapperMock
     override lazy val session = sessionMock
 
-    override def createAuction(auctionRequest: CreateAuctionRequest, owner: String): AuctionId = {
-      AuctionId(Categories.head, 1, TestableAuctionsServlet.auctionUuid)
+    override def createAuction(auctionRequest: CreateAuctionRequest, owner: String): UUID = {
+      TestableAuctionsServlet.auctionUuid
     }
 
     override def getAuction(id: UUID): AuctionViewResponse = {

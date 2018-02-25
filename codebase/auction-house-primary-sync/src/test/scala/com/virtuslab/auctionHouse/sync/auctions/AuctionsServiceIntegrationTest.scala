@@ -70,9 +70,8 @@ class AuctionsServiceIntegrationTest extends WordSpec with CassandraIntegrationT
         val beforeCreation = new Date().getTime
         auctionsService.accountsMapper.save(new Account("o1", "p1"))
         val id = auctionsService.createAuction(req, "o1")
-        id.category should equal(Categories.head)
-        id.createdAt should be <= new Date().getTime
-        id.createdAt should be >= beforeCreation
+        val auction = auctionsService.getAuction(id)
+        auction.auctionId should equal(id.toString)
       }
     }
 
@@ -92,13 +91,13 @@ class AuctionsServiceIntegrationTest extends WordSpec with CassandraIntegrationT
         val req = CreateAuctionRequest(Categories.head, "t1", "desc1", 1, parse("""{"details": "foo"}"""))
         auctionsService.accountsMapper.save(new Account("o1", "p1"))
         val auction1Id = auctionsService.createAuction(req, "o1")
-        auctionsService.bidsMapper.save(new Bid(auction1Id.auctionId, UUIDs.timeBased(), "o1", new java.math.BigDecimal(10)))
-        auctionsService.bidsMapper.save(new Bid(auction1Id.auctionId, UUIDs.timeBased(), "o1", new java.math.BigDecimal(10)))
+        auctionsService.bidsMapper.save(new Bid(auction1Id, UUIDs.timeBased(), "o1", new java.math.BigDecimal(10)))
+        auctionsService.bidsMapper.save(new Bid(auction1Id, UUIDs.timeBased(), "o1", new java.math.BigDecimal(10)))
         val auction2Id = auctionsService.createAuction(req.copy(title = "t2"), "o1")
-        val a1 = auctionsService.getAuction(auction1Id.auctionId)
+        val a1 = auctionsService.getAuction(auction1Id)
         a1.title should equal("t1")
         a1.bids.size should equal(2)
-        val a2 = auctionsService.getAuction(auction2Id.auctionId)
+        val a2 = auctionsService.getAuction(auction2Id)
         a2.title should equal("t2")
         a2.bids.size should equal(0)
       }
@@ -111,9 +110,9 @@ class AuctionsServiceIntegrationTest extends WordSpec with CassandraIntegrationT
         val req = CreateAuctionRequest(Categories.head, "t1", "desc1", 1, parse("""{"details": "foo"}"""))
         auctionsService.accountsMapper.save(new Account("o1", "p1"))
         val auctionId = auctionsService.createAuction(req, "o1")
-        auctionsService.bidInAuction(auctionId.auctionId, 5, "o1")
-        auctionsService.bidInAuction(auctionId.auctionId, 6, "o1")
-        auctionsService.getAuction(auctionId.auctionId).bids.size should equal(2)
+        auctionsService.bidInAuction(auctionId, 5, "o1")
+        auctionsService.bidInAuction(auctionId, 6, "o1")
+        auctionsService.getAuction(auctionId).bids.size should equal(2)
       }
     }
 
@@ -123,7 +122,7 @@ class AuctionsServiceIntegrationTest extends WordSpec with CassandraIntegrationT
         auctionsService.accountsMapper.save(new Account("o1", "p1"))
         val auctionId = auctionsService.createAuction(req, "o1")
         intercept[UnknownEntityException] {
-          auctionsService.bidInAuction(auctionId.auctionId, 5, "o2")
+          auctionsService.bidInAuction(auctionId, 5, "o2")
         }
       }
 

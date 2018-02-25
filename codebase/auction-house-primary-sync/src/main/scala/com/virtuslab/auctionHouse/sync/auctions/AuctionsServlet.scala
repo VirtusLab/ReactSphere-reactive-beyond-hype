@@ -34,7 +34,7 @@ class AuctionsServlet extends ScalatraServlet with JacksonJsonSupport with Authe
   post("/") {
     auth { account =>
       val auctionRequest = parsedBody.extract[CreateAuctionRequest]
-      Try(auctionsService.createAuction(auctionRequest, account.username)).map(id => Ok(id.idString))
+      Try(auctionsService.createAuction(auctionRequest, account.username)).map(id => Ok(id))
         .recover {
           case e: InvalidCategoryException => BadRequest(e.getMessage)
         }.get
