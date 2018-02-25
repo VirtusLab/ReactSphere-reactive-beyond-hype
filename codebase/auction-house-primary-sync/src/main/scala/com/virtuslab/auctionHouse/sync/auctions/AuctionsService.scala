@@ -3,9 +3,10 @@ package com.virtuslab.auctionHouse.sync.auctions
 import java.util.UUID
 
 import com.datastax.driver.core.querybuilder.QueryBuilder
-import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.{InvalidCategoryException, UnknownOwnerException}
-import com.virtuslab.auctionHouse.sync.cassandra._
+import com.datastax.driver.core.utils.UUIDs
+import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.{InvalidBidException, InvalidCategoryException, UnknownEntityException}
 import com.virtuslab.auctionHouse.sync.cassandra.SessionManager.ScalaMapper
+import com.virtuslab.auctionHouse.sync.cassandra._
 import com.virtuslab.auctionHouse.sync.commons.ServletModels.{AuctionViewResponse, Auctions, CreateAuctionRequest, EntityNotFoundException}
 
 import scala.collection.JavaConverters._
@@ -33,10 +34,12 @@ class AuctionsService {
     Auctions(category, auctions)
   }
 
+  private def accountExists(username: String): Boolean = accountsMapper.getOption(username).isDefined
+
   def createAuction(auctionRequest: CreateAuctionRequest, owner: String): AuctionId = {
     assertCategory(auctionRequest.category)
-    if (accountsMapper.getOption(owner).isEmpty) {
-      throw new UnknownOwnerException(s"Cannot find owner: $owner")
+    if (!accountExists(owner)) {
+      throw new UnknownEntityException(s"Cannot find owner: $owner")
     }
     val auction = new Auction(auctionRequest, owner)
     auctionsMapper.save(auction)
@@ -52,12 +55,31 @@ class AuctionsService {
         AuctionViewResponse(auction, bids)
       }.getOrElse(throw new EntityNotFoundException(s"Auction id = $id cannot be found"))
   }
+
+  private def auctionExists(auctionId: UUID): Boolean = {
+    1 == session.execute(QueryBuilder.select().countAll().from("auctions_view")
+      .where(QueryBuilder.eq("auction_id", auctionId))).one().get(0, classOf[Long])
+  }
+
+  def bidInAuction(auctionId: UUID, bidValue: BigDecimal, bidder: String): Unit = {
+    if(!auctionExists(auctionId)) throw new UnknownEntityException(s"Cannot find account: $bidder")
+    if (!accountExists(bidder)) throw new UnknownEntityException(s"Cannot find account: $bidder")
+    val isMaxBid = bidsMapper.map(session.execute(QueryBuilder.select().all().from("bids")
+      .where(QueryBuilder.eq("auction_id", auctionId)))).asScala.forall(b => BigDecimal(b.amount) < bidValue)
+    if (isMaxBid) {
+      bidsMapper.save(new Bid(auctionId, UUIDs.timeBased(), bidder, bidValue.bigDecimal))
+    } else {
+      throw new InvalidBidException("Bid value is not big enough")
+    }
+  }
 }
 
 object AuctionsService {
 
   class InvalidCategoryException(msg: String) extends RuntimeException(msg)
 
-  class UnknownOwnerException(msg: String) extends RuntimeException(msg)
+  class InvalidBidException(msg: String) extends RuntimeException(msg)
+
+  class UnknownEntityException(msg: String) extends RuntimeException(msg)
 
 }

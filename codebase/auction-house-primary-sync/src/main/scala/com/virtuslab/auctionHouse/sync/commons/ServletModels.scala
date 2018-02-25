@@ -32,8 +32,7 @@ object ServletModels {
     def apply(a: AuctionView, bids: Seq[cassandra.Bid]): AuctionViewResponse = {
       new AuctionViewResponse(a.auction_id.toString, a.title, a.description, parse(a.details), bids.map(Bid(_)))
     }
-
   }
-
+  case class BidRequest(amount: BigDecimal)
   class EntityNotFoundException(msg: String) extends RuntimeException(msg)
 }

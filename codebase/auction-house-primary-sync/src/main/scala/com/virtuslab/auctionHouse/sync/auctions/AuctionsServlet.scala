@@ -2,12 +2,12 @@ package com.virtuslab.auctionHouse.sync.auctions
 
 import java.util.UUID
 
-import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.InvalidCategoryException
-import com.virtuslab.auctionHouse.sync.commons.ServletModels.{CreateAuctionRequest, EntityNotFoundException}
+import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.{InvalidBidException, InvalidCategoryException}
+import com.virtuslab.auctionHouse.sync.commons.ServletModels.{BidRequest, CreateAuctionRequest, EntityNotFoundException, ErrorResponse}
 import com.virtuslab.auctionHouse.sync.signIn.Authentication
 import org.json4s.{DefaultFormats, Formats}
+import org.scalatra._
 import org.scalatra.json.JacksonJsonSupport
-import org.scalatra.{BadRequest, Ok, ScalatraServlet}
 
 import scala.util.Try
 
@@ -41,13 +41,25 @@ class AuctionsServlet extends ScalatraServlet with JacksonJsonSupport with Authe
     }
   }
 
+  post("/:id/bids") {
+    auth { user =>
+      val bidValue = parsedBody.extract[BidRequest].amount
+      Try(auctionsService.bidInAuction(UUID.fromString(params("id")), bidValue, user.username))
+        .map(_ => Created())
+        .recover {
+          case e: EntityNotFoundException => BadRequest(e.getMessage)
+          case _: InvalidBidException => Conflict(ErrorResponse("your bid is not high enough"))
+        }.get
+    }
+  }
+
   get("/:id") {
     auth { _ =>
       Try(auctionsService.getAuction(UUID.fromString(params("id"))))
-          .map(Ok(_))
+        .map(Ok(_))
         .recover {
-        case e: EntityNotFoundException => BadRequest(e.getMessage)
-      }.get
+          case e: EntityNotFoundException => BadRequest(e.getMessage)
+        }.get
     }
   }
 }

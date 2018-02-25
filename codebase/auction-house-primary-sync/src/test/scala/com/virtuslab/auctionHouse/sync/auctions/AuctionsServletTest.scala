@@ -5,6 +5,7 @@ import java.util.UUID
 import com.datastax.driver.core.{ResultSet, Session, Statement}
 import com.datastax.driver.mapping.{Mapper, Result}
 import com.virtuslab.auctionHouse.sync.BaseServletTest
+import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.InvalidBidException
 import com.virtuslab.auctionHouse.sync.cassandra._
 import com.virtuslab.auctionHouse.sync.commons.ServletModels
 import com.virtuslab.auctionHouse.sync.commons.ServletModels.{AuctionViewResponse, Auctions, Bid, CreateAuctionRequest}
@@ -13,7 +14,7 @@ import org.json4s.jackson.JsonMethods._
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.{mock, when}
 import org.scalatra.test.JettyContainer
-import org.scalatra.{BadRequest, Ok, Unauthorized}
+import org.scalatra._
 
 class AuctionsServletTest extends BaseServletTest(classOf[TestableAuctionsServlet]) { scalatraTest: JettyContainer =>
 
@@ -75,14 +76,36 @@ class AuctionsServletTest extends BaseServletTest(classOf[TestableAuctionsServle
     }
   }
 
-  "Getting auction" when {
-    "auction was created successfully" in {
-      get("/236927b7-ee42-43b0-a032-668aaba51ea3") {
-        status should equal(Ok().status)
-        val auction = parse(body).extract[AuctionViewResponse]
-        auction should equal(AuctionViewResponse("236927b7-ee42-43b0-a032-668aaba51ea3", "", "",
-          parse("""{"some": "foo"}"""),
-          Seq(ServletModels.Bid("236927b7-ee42-43b0-a032-668aaba51ea3", "id", "bidder", 12))))
+  "Getting auction" should {
+    "return auction view with bids" when {
+      "correct id was passed" in {
+        get("/236927b7-ee42-43b0-a032-668aaba51ea3") {
+          status should equal(Ok().status)
+          val auction = parse(body).extract[AuctionViewResponse]
+          auction should equal(AuctionViewResponse("236927b7-ee42-43b0-a032-668aaba51ea3", "", "",
+            parse("""{"some": "foo"}"""),
+            Seq(ServletModels.Bid("236927b7-ee42-43b0-a032-668aaba51ea3", "id", "bidder", 12))))
+        }
+      }
+    }
+  }
+
+  "Bidding in auction" should {
+    "return created" when {
+      "bid was successful" in {
+        post("/236927b7-ee42-43b0-a032-668aaba51ea3/bids",
+          s"""{ "amount": 10 }""".stripMargin, jsonHeader) {
+          status should equal(Created().status)
+        }
+      }
+    }
+
+    "return conflict" when {
+      "bid was not big enough" in {
+        post("/236927b7-ee42-43b0-a032-668aaba51ea3/bids",
+          s"""{ "amount": 9 }""".stripMargin, jsonHeader) {
+          status should equal(Conflict().status)
+        }
       }
     }
   }
@@ -117,6 +140,12 @@ class TestableAuctionsServlet extends AuctionsServlet {
           Seq(ServletModels.Bid(id.toString, "id", "bidder", 12)))
       } else {
         ???
+      }
+    }
+
+    override def bidInAuction(auctionId: UUID, bidValue: BigDecimal, bidder: String): Unit = {
+      if(bidValue < 10) {
+        throw new InvalidBidException("")
       }
     }
   }

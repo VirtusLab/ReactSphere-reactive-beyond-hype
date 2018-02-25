@@ -4,7 +4,7 @@ import java.util.{Date, UUID}
 
 import com.datastax.driver.core.utils.UUIDs
 import com.datastax.driver.mapping.Mapper
-import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.{InvalidCategoryException, UnknownOwnerException}
+import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.{InvalidCategoryException, UnknownEntityException}
 import com.virtuslab.auctionHouse.sync.cassandra._
 import com.virtuslab.auctionHouse.sync.commons.ServletModels.CreateAuctionRequest
 import com.virtuslab.auctionhouse.cassandra.CassandraIntegrationTest
@@ -79,7 +79,7 @@ class AuctionsServiceIntegrationTest extends WordSpec with CassandraIntegrationT
     "throw exception" when {
       "owner is invalid" in {
         val req = CreateAuctionRequest(Categories.head, "t1", "desc1", 1, parse("""{"details": "foo"}"""))
-        intercept[UnknownOwnerException] {
+        intercept[UnknownEntityException] {
           auctionsService.createAuction(req, "foo_owner")
         }
       }
@@ -101,6 +101,37 @@ class AuctionsServiceIntegrationTest extends WordSpec with CassandraIntegrationT
         val a2 = auctionsService.getAuction(auction2Id.auctionId)
         a2.title should equal("t2")
         a2.bids.size should equal(0)
+      }
+    }
+  }
+
+  "Bidding in auction" should {
+    "executes successfully" when {
+      "bid is highest one in auction" in {
+        val req = CreateAuctionRequest(Categories.head, "t1", "desc1", 1, parse("""{"details": "foo"}"""))
+        auctionsService.accountsMapper.save(new Account("o1", "p1"))
+        val auctionId = auctionsService.createAuction(req, "o1")
+        auctionsService.bidInAuction(auctionId.auctionId, 5, "o1")
+        auctionsService.bidInAuction(auctionId.auctionId, 6, "o1")
+        auctionsService.getAuction(auctionId.auctionId).bids.size should equal(2)
+      }
+    }
+
+    "throw exception" when {
+      "owner is invalid" in {
+        val req = CreateAuctionRequest(Categories.head, "t1", "desc1", 1, parse("""{"details": "foo"}"""))
+        auctionsService.accountsMapper.save(new Account("o1", "p1"))
+        val auctionId = auctionsService.createAuction(req, "o1")
+        intercept[UnknownEntityException] {
+          auctionsService.bidInAuction(auctionId.auctionId, 5, "o2")
+        }
+      }
+
+      "auction id is invalid" in {
+        auctionsService.accountsMapper.save(new Account("o1", "p1"))
+        intercept[UnknownEntityException] {
+          auctionsService.bidInAuction(UUID.randomUUID(), 5, "o2")
+        }
       }
     }
   }
