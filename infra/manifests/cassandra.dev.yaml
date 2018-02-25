@@ -1,0 +1,137 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: databases
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: cassandra-pv-1
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath: # this _only_ works due to Tectonic Sandbox having single worker node, AWS will have to use EBS Provisioner
+    path: "/mnt/data1"
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: cassandra-pv-2
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath: # this _only_ works due to Tectonic Sandbox having single worker node, AWS will have to use EBS Provisioner
+    path: "/mnt/data2"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cassandra
+  namespace: databases
+  labels:
+    app: cassandra
+spec:
+  clusterIP: None
+  ports:
+  - port: 9042
+  selector:
+    app: cassandra
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: cassandra
+  namespace: databases
+  labels:
+    app: cassandra
+spec:
+  serviceName: cassandra
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cassandra
+  template:
+    metadata:
+      labels:
+        app: cassandra
+    spec:
+      terminationGracePeriodSeconds: 1800
+      containers:
+      - name: cassandra
+        image: gcr.io/google-samples/cassandra:v13
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 7000
+          name: intra-node
+        - containerPort: 7001
+          name: tls-intra-node
+        - containerPort: 7199
+          name: jmx
+        - containerPort: 9042
+          name: cql
+        resources:
+          limits:
+#            cpu: "500m"
+            memory: 512Mi
+          requests:
+#           cpu: "500m"
+           memory: 512Mi
+        securityContext:
+          capabilities:
+            add:
+              - IPC_LOCK
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - nodetool drain
+        env:
+          - name: MAX_HEAP_SIZE
+            value: 128M
+          - name: HEAP_NEWSIZE
+            value: 24M
+          - name: CASSANDRA_SEEDS
+            value: "cassandra-0.cassandra.databases.svc.cluster.local"
+          - name: CASSANDRA_CLUSTER_NAME
+            value: "auction-house-cassandra"
+          - name: CASSANDRA_DC
+            value: "TECTONIC-LOCAL"
+          - name: CASSANDRA_RACK
+            value: "RACK1-TECTONIC-LOCAL"
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - /ready-probe.sh
+          initialDelaySeconds: 15
+          timeoutSeconds: 5
+        volumeMounts:
+        - name: cassandra-data
+          mountPath: /cassandra_data
+  volumeClaimTemplates:
+  - metadata:
+      name: cassandra-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: manual
+      resources:
+        requests:
+          storage: 1Gi

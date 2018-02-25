@@ -133,4 +133,4 @@ lazy val root = (project in file("."))
     commonSettings,
     name := "beyond-the-hype-codebase",
   )
-  .aggregate(helloWorldSync, helloWorldAsync, auctionHousePrimarySync)
+  .aggregate(helloWorldSync, helloWorldAsync, auctionHousePrimarySync, auctionHousePrimaryAsync)
