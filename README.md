@@ -1,11 +1,12 @@
 # ReactSphere-reactive-beyond-hype
 Repo for presentation on ReactSphere: Reactive beyond hype
 
-### Requirements:
- * ammonite
+### Requirements (with install instructions:)
+ * ammonite ( tested on ver. 1.0.x, http://ammonite.io/#Ammonite-REPL )
  * sbt 
- * Docker
- * kubectl
+ * Docker ( tested on ver. 17.12.x, https://www.docker.com/get-docker , also make sure you start service e.g. `sudo systemctl start docker` and add your user to docker group `sudo usermod -a -G docker $YOUR_USER`)
+ * kubectl (https://kubernetes.io/docs/tasks/tools/install-kubectl/ )
+ * Vagrant ( tested on ver. 2.0.x, https://www.vagrantup.com/downloads.html )
 
 ### Development setup:
 
