@@ -6,7 +6,8 @@ import com.datastax.driver.core.{ResultSet, Session, Statement}
 import com.datastax.driver.mapping.{Mapper, Result}
 import com.virtuslab.auctionHouse.sync.BaseServletTest
 import com.virtuslab.auctionHouse.sync.cassandra._
-import com.virtuslab.auctionHouse.sync.commons.ServletModels.{Auctions, CreateAuctionRequest}
+import com.virtuslab.auctionHouse.sync.commons.ServletModels
+import com.virtuslab.auctionHouse.sync.commons.ServletModels.{AuctionViewResponse, Auctions, Bid, CreateAuctionRequest}
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import org.mockito.ArgumentMatchers
@@ -73,6 +74,18 @@ class AuctionsServletTest extends BaseServletTest(classOf[TestableAuctionsServle
       }
     }
   }
+
+  "Getting auction" when {
+    "auction was created successfully" in {
+      get("/236927b7-ee42-43b0-a032-668aaba51ea3") {
+        status should equal(Ok().status)
+        val auction = parse(body).extract[AuctionViewResponse]
+        auction should equal(AuctionViewResponse("236927b7-ee42-43b0-a032-668aaba51ea3", "", "",
+          parse("""{"some": "foo"}"""),
+          Seq(ServletModels.Bid("236927b7-ee42-43b0-a032-668aaba51ea3", "id", "bidder", 12))))
+      }
+    }
+  }
 }
 
 class TestableAuctionsServlet extends AuctionsServlet {
@@ -96,6 +109,15 @@ class TestableAuctionsServlet extends AuctionsServlet {
 
     override def createAuction(auctionRequest: CreateAuctionRequest, owner: String): AuctionId = {
       AuctionId(Categories.head, 1, TestableAuctionsServlet.auctionUuid)
+    }
+
+    override def getAuction(id: UUID): AuctionViewResponse = {
+      if(id.toString == "236927b7-ee42-43b0-a032-668aaba51ea3") {
+        AuctionViewResponse(id.toString, "", "", parse("""{"some": "foo"}"""),
+          Seq(ServletModels.Bid(id.toString, "id", "bidder", 12)))
+      } else {
+        ???
+      }
     }
   }
 }

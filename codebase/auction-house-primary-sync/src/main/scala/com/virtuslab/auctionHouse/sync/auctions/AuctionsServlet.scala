@@ -1,7 +1,9 @@
 package com.virtuslab.auctionHouse.sync.auctions
 
+import java.util.UUID
+
 import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.InvalidCategoryException
-import com.virtuslab.auctionHouse.sync.commons.ServletModels.CreateAuctionRequest
+import com.virtuslab.auctionHouse.sync.commons.ServletModels.{CreateAuctionRequest, EntityNotFoundException}
 import com.virtuslab.auctionHouse.sync.signIn.Authentication
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.json.JacksonJsonSupport
@@ -19,7 +21,7 @@ class AuctionsServlet extends ScalatraServlet with JacksonJsonSupport with Authe
   lazy val auctionsService = new AuctionsService()
 
   get("/") {
-    auth { account =>
+    auth { _ =>
       params.get("category").map { category =>
         Try(auctionsService.listAuctions(category)).map(Ok(_))
           .recover {
@@ -36,6 +38,16 @@ class AuctionsServlet extends ScalatraServlet with JacksonJsonSupport with Authe
         .recover {
           case e: InvalidCategoryException => BadRequest(e.getMessage)
         }.get
+    }
+  }
+
+  get("/:id") {
+    auth { _ =>
+      Try(auctionsService.getAuction(UUID.fromString(params("id"))))
+          .map(Ok(_))
+        .recover {
+        case e: EntityNotFoundException => BadRequest(e.getMessage)
+      }.get
     }
   }
 }

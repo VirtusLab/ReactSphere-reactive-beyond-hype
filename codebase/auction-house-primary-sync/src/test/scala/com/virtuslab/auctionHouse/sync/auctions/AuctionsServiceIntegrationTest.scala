@@ -2,9 +2,10 @@ package com.virtuslab.auctionHouse.sync.auctions
 
 import java.util.{Date, UUID}
 
+import com.datastax.driver.core.utils.UUIDs
 import com.datastax.driver.mapping.Mapper
 import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.{InvalidCategoryException, UnknownOwnerException}
-import com.virtuslab.auctionHouse.sync.cassandra.{Account, Auction, Categories, SessionManager}
+import com.virtuslab.auctionHouse.sync.cassandra._
 import com.virtuslab.auctionHouse.sync.commons.ServletModels.CreateAuctionRequest
 import com.virtuslab.auctionhouse.cassandra.CassandraIntegrationTest
 import org.json4s.jackson.JsonMethods.parse
@@ -19,6 +20,8 @@ class AuctionsServiceIntegrationTest extends WordSpec with CassandraIntegrationT
   val auctionsService = new AuctionsService {
     override lazy val auctionsMapper: Mapper[Auction] = sessionManager.mapper(classOf[Auction])
     override lazy val accountsMapper = sessionManager.mapper(classOf[Account])
+    override lazy val auctionsViewMapper = sessionManager.mapper(classOf[AuctionView])
+    override lazy val bidsMapper = sessionManager.mapper(classOf[Bid])
     override lazy val session = sessionManager.session
   }
 
@@ -79,6 +82,25 @@ class AuctionsServiceIntegrationTest extends WordSpec with CassandraIntegrationT
         intercept[UnknownOwnerException] {
           auctionsService.createAuction(req, "foo_owner")
         }
+      }
+    }
+  }
+
+  "Getting auction by id" should {
+    "return action with bids" when {
+      "correct id is provided" in {
+        val req = CreateAuctionRequest(Categories.head, "t1", "desc1", 1, parse("""{"details": "foo"}"""))
+        auctionsService.accountsMapper.save(new Account("o1", "p1"))
+        val auction1Id = auctionsService.createAuction(req, "o1")
+        auctionsService.bidsMapper.save(new Bid(auction1Id.auctionId, UUIDs.timeBased(), "o1", new java.math.BigDecimal(10)))
+        auctionsService.bidsMapper.save(new Bid(auction1Id.auctionId, UUIDs.timeBased(), "o1", new java.math.BigDecimal(10)))
+        val auction2Id = auctionsService.createAuction(req.copy(title = "t2"), "o1")
+        val a1 = auctionsService.getAuction(auction1Id.auctionId)
+        a1.title should equal("t1")
+        a1.bids.size should equal(2)
+        val a2 = auctionsService.getAuction(auction2Id.auctionId)
+        a2.title should equal("t2")
+        a2.bids.size should equal(0)
       }
     }
   }
