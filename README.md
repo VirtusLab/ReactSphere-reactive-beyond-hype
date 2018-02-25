@@ -128,3 +128,27 @@ or
 ```bash
 curl -ik https://hello-world-sync.local
 ```
+
+### In-cluster Cassandra
+
+Deploying Cassandra cluster:
+```bash
+kubectl apply -f infra/manifests/cassandra.dev.yaml
+```
+
+Applying schema migrations:
+- First wait for both Cassandra instances to start and settle - check out pod logs to see if they are ready for work
+
+Run migration job:
+```bash
+kubectl apply -f infra/manifests/migration.dev.yaml
+```
+
+Verify migration success:
+ - check job successful runs in Tectonic Console, namespace: databases, tab jobs.
+ - connnect to Cassandra cluster using cqlsh tool:
+```bash
+kubectl -n databases run --rm -i --tty cqlsh --image=cassandra --restart=Never -- sh -c 'exec cqlsh cassandra-0.cassandra.databases.svc.cluster.local'
+
+cqlsh> DESCRIBE KEYSPACE microservices;
+```

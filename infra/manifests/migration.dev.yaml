@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cassandra-schema
+  namespace: databases
+data:
+  schema.cql: |
+    CREATE KEYSPACE IF NOT EXISTS microservices
+      WITH REPLICATION = {
+          'class' : 'SimpleStrategy', 'replication_factor' : 2
+      };
+
+    CREATE TABLE IF NOT EXISTS microservices.accounts (
+        username text,
+        password text,
+        PRIMARY KEY (username)
+    );
+
+    CREATE TABLE IF NOT EXISTS microservices.tokens (
+        bearer_token text,
+        username text,
+        expires_at timestamp,
+        PRIMARY KEY (bearer_token)
+    );
+
+    CREATE TABLE IF NOT EXISTS microservices.auctions (
+        category text,
+        created_at timestamp,
+        auction_id uuid,
+        owner text,
+        title text,
+        description text,
+        details text,
+        minimum_price decimal,
+        PRIMARY KEY (category, created_at, auction_id)
+    ) WITH CLUSTERING ORDER BY (created_at DESC);
+
+    CREATE MATERIALIZED VIEW IF NOT EXISTS microservices.auctions_view AS
+        SELECT * FROM microservices.auctions
+        WHERE auction_id IS NOT NULL AND created_at IS NOT NULL AND category IS NOT NULL
+        PRIMARY KEY (auction_id, created_at, category);
+
+    CREATE TABLE IF NOT EXISTS microservices.bids (
+        auction_id uuid,
+        bid_id timeuuid,
+        bidder text,
+        amount decimal,
+        PRIMARY KEY (auction_id, bid_id)
+    );
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate-cassandra
+  namespace: databases
+spec:
+  selector: {}
+  template:
+    metadata:
+      name: migrate-cassandra
+    spec:
+      containers:
+      - name: cqlsh
+        image: cassandra
+        imagePullPolicy: Always
+        command: [ "cqlsh", "-f", "/data/schema.cql", "cassandra-0.cassandra.databases.svc.cluster.local" ]
+        volumeMounts:
+          - name: migrations
+            mountPath: /data/schema.cql
+            subPath: schema.cql
+      volumes:
+      - name: migrations
+        configMap:
+          name: cassandra-schema
+      restartPolicy: Never
+
