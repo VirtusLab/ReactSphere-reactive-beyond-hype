@@ -8,6 +8,7 @@ import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.{InvalidBidExcep
 import com.virtuslab.auctionHouse.sync.cassandra.SessionManager.ScalaMapper
 import com.virtuslab.auctionHouse.sync.cassandra._
 import com.virtuslab.auctionHouse.sync.commons.ServletModels.{AuctionViewResponse, Auctions, CreateAuctionRequest, EntityNotFoundException}
+import com.virtuslab.auctions.Categories
 
 import scala.collection.JavaConverters._
 

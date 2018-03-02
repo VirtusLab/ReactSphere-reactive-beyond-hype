@@ -2,16 +2,16 @@ package com.virtuslab.auctionHouse.sync.auctions
 
 import java.util.UUID
 
+import com.virtuslab.auctionHouse.sync.BaseServlet
 import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.{InvalidBidException, InvalidCategoryException}
 import com.virtuslab.auctionHouse.sync.commons.ServletModels.{BidRequest, CreateAuctionRequest, EntityNotFoundException, ErrorResponse}
 import com.virtuslab.auctionHouse.sync.signIn.Authentication
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra._
-import org.scalatra.json.JacksonJsonSupport
 
 import scala.util.Try
 
-class AuctionsServlet extends ScalatraServlet with JacksonJsonSupport with Authentication {
+class AuctionsServlet extends BaseServlet with Authentication {
   override protected implicit def jsonFormats: Formats = DefaultFormats
 
   before() {
@@ -34,7 +34,7 @@ class AuctionsServlet extends ScalatraServlet with JacksonJsonSupport with Authe
   post("/") {
     auth { account =>
       val auctionRequest = parsedBody.extract[CreateAuctionRequest]
-      Try(auctionsService.createAuction(auctionRequest, account.username)).map(id => Ok(id))
+      Try(auctionsService.createAuction(auctionRequest, account.username)).map(id => Created(id))
         .recover {
           case e: InvalidCategoryException => BadRequest(e.getMessage)
         }.get

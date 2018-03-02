@@ -3,14 +3,15 @@ package com.virtuslab.auctionHouse.sync.signIn
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.{Date, UUID}
+
+import com.virtuslab.auctionHouse.sync.BaseServlet
 import com.virtuslab.auctionHouse.sync.cassandra.SessionManager.ScalaMapper
 import com.virtuslab.auctionHouse.sync.cassandra.{Account, SessionManager, Token}
 import com.virtuslab.identity.{SignInRequest, TokenResponse}
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra._
-import org.scalatra.json.JacksonJsonSupport
 
-class SignInServlet extends ScalatraServlet with JacksonJsonSupport {
+class SignInServlet extends BaseServlet {
   override protected implicit def jsonFormats: Formats = DefaultFormats
 
   before() {
@@ -27,7 +28,7 @@ class SignInServlet extends ScalatraServlet with JacksonJsonSupport {
         val token = new Token(UUID.randomUUID().toString, u.username,
           new Date(Instant.now().plus(60, ChronoUnit.MINUTES).toEpochMilli))
         tokensMapper.save(token)
-        Ok(TokenResponse(token.token))
+        Ok(TokenResponse(token.bearer_token))
       } else {
         Unauthorized()
       }

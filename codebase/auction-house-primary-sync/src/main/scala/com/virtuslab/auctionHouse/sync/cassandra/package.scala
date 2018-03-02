@@ -28,7 +28,7 @@ package object cassandra {
 
 
   @Table(name = "tokens")
-  class Token(@(PartitionKey @field) val token: String, val username: String, val expires_at: Date) {
+  class Token(@(PartitionKey @field) val bearer_token: String, val username: String, val expires_at: Date) {
     def this() {
       this(null, null, null)
     }
@@ -64,16 +64,4 @@ package object cassandra {
       this(null, null, null, null)
     }
   }
-
-  val Categories = Vector(
-    "motorization",
-    "garden",
-    "furniture",
-    "home appliances",
-    "electronics",
-    "pets & animals",
-    "clothing",
-    "groceries",
-    "health & beauty"
-  )
 }

@@ -10,7 +10,8 @@ trait SessionManager {
     .addContactPoint(Config.cassandraContactPoint)
     .build()
 
-  lazy val session = cluster.connect()
+  val keyspace = "auction_house"
+  lazy val session = cluster.connect(keyspace)
 
   protected lazy val mappingManager = new MappingManager(session)
 

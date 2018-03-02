@@ -8,6 +8,7 @@ import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.{InvalidCategory
 import com.virtuslab.auctionHouse.sync.cassandra._
 import com.virtuslab.auctionHouse.sync.commons.ServletModels.CreateAuctionRequest
 import com.virtuslab.auctionhouse.cassandra.CassandraIntegrationTest
+import com.virtuslab.auctions.Categories
 import org.json4s.jackson.JsonMethods.parse
 import org.scalatest.{Matchers, WordSpec}
 
