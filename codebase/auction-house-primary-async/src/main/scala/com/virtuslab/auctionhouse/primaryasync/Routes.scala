@@ -8,6 +8,7 @@ import com.virtuslab.cassandra.CassandraClientImpl
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 trait Routes extends SprayJsonSupport with DefaultJsonProtocol with IdentityRoutes with IdentityServiceImpl
+  with AuctionRoutes with AuctionServiceImpl with IdentityHelpers
   with RoutingUtils with CassandraClientImpl {
 
   lazy val routes: Route =
