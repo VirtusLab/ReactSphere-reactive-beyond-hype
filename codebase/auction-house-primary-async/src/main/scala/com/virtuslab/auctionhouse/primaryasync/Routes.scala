@@ -12,7 +12,7 @@ trait Routes extends SprayJsonSupport with DefaultJsonProtocol with IdentityRout
   with RoutingUtils with CassandraClientImpl {
 
   lazy val routes: Route =
-    identityRoutes ~
+    identityRoutes ~ auctionRoutes ~
       path("_status") {
         complete(Status())
       }
