@@ -8,7 +8,7 @@ object JettyLauncher {
 
     val server = new Server(port)
     val context = new WebAppContext()
-    context.setContextPath("/api/v1/")
+    context.setContextPath("/")
     context.setResourceBase("src/main/webapp")
 
     context.setEventListeners(Array(new ScalatraListener))

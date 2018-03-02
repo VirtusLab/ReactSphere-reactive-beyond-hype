@@ -7,15 +7,15 @@ import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import com.virtuslab.cassandra.CassandraClientImpl
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
-trait Routes extends SprayJsonSupport with DefaultJsonProtocol with IdentityRoutes with IdentityServiceImpl
+trait Routes extends SprayJsonSupport with DefaultJsonProtocol
+  with IdentityRoutes with IdentityServiceImpl
   with AuctionRoutes with AuctionServiceImpl with IdentityHelpers
   with RoutingUtils with CassandraClientImpl {
 
   lazy val routes: Route =
-    identityRoutes ~
-      path("_status") {
-        complete(Status())
-      }
+    path("_status") {
+      complete(Status())
+    } ~ identityRoutes ~ auctionRoutes
 
   private lazy val version = System.getProperty("service.version", "unknown")
 
