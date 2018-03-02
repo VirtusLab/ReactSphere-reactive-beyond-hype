@@ -153,3 +153,10 @@ kubectl -n databases run --rm -i --tty cqlsh --image=cassandra --restart=Never -
 
 cqlsh> DESCRIBE KEYSPACE microservices;
 ```
+
+### Running gatling tests
+
+To run tests make sure that server is started and correct address is pointed in config. Then exec:
+```bash
+sbt gatling:test
+```
