@@ -128,9 +128,27 @@ lazy val helloWorldAsync = (project in file("hello-world-async"))
   .enablePlugins(JavaAppPackaging, DockerPlugin, GitVersioning)
   .dependsOn(commons % "test->test;compile->compile")
 
+lazy val gatlingTests = (project in file("gatling-tests"))
+  .settings(
+    commonSettings,
+    name := "gatling-tests",
+    libraryDependencies ++= Seq(
+      "ch.qos.logback"             %  "logback-classic"           % "1.1.7",
+      "io.gatling.highcharts"      %  "gatling-charts-highcharts" % "2.3.0",
+      "io.gatling"                 %  "gatling-test-framework"    % "2.3.0",
+      "com.danielasfregola"        %% "random-data-generator"     % "2.4",
+      "org.json4s"                 %% "json4s-jackson"            % "3.6.0-M2",
+      "org.json4s"                 %% "json4s-native"             % "3.6.0-M2",
+      "com.typesafe"               %  "config"                    % "1.3.2"
+    ),
+    dockerCommands ++= installBashCommands
+  )
+  .enablePlugins(JavaAppPackaging, DockerPlugin, GitVersioning, GatlingPlugin)
+  .dependsOn(commons % "test->test;compile->compile")
+
 lazy val root = (project in file("."))
   .settings(
     commonSettings,
     name := "beyond-the-hype-codebase",
   )
-  .aggregate(helloWorldSync, helloWorldAsync, auctionHousePrimarySync, auctionHousePrimaryAsync)
+  .aggregate(helloWorldSync, helloWorldAsync, auctionHousePrimarySync, auctionHousePrimaryAsync, gatlingTests)
