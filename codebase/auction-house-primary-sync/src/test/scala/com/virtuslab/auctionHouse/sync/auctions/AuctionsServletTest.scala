@@ -8,13 +8,14 @@ import com.virtuslab.auctionHouse.sync.BaseServletTest
 import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.InvalidBidException
 import com.virtuslab.auctionHouse.sync.cassandra._
 import com.virtuslab.auctionHouse.sync.commons.ServletModels
-import com.virtuslab.auctionHouse.sync.commons.ServletModels.{AuctionViewResponse, Auctions, Bid, CreateAuctionRequest}
+import com.virtuslab.auctionHouse.sync.commons.ServletModels.{AuctionViewResponse, Auctions, CreateAuctionRequest}
+import com.virtuslab.auctions.Categories
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.{mock, when}
-import org.scalatra.test.JettyContainer
 import org.scalatra._
+import org.scalatra.test.JettyContainer
 
 class AuctionsServletTest extends BaseServletTest(classOf[TestableAuctionsServlet]) { scalatraTest: JettyContainer =>
 
@@ -69,7 +70,7 @@ class AuctionsServletTest extends BaseServletTest(classOf[TestableAuctionsServle
         post("/",
           s"""{ "category": "c1", "title": "t1", "description": "d1", "minimumPrice": 1,
              | "details": {"some": "details"} }""".stripMargin, jsonHeader) {
-          status should equal(Ok().status)
+          status should equal(Created().status)
           body should equal(TestableAuctionsServlet.auctionUuid.toString)
         }
       }

@@ -28,7 +28,7 @@ class SignInServlet extends BaseServlet {
         val token = new Token(UUID.randomUUID().toString, u.username,
           new Date(Instant.now().plus(60, ChronoUnit.MINUTES).toEpochMilli))
         tokensMapper.save(token)
-        Ok(TokenResponse(token.token))
+        Ok(TokenResponse(token.bearer_token))
       } else {
         Unauthorized()
       }
