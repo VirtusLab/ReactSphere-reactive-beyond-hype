@@ -1,0 +1,63 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: microservices
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auction-house-primary-sync
+  namespace: microservices
+spec:
+  selector:
+    app: auction-house-primary-sync
+  ports:
+    - protocol: TCP
+      port: 443
+      targetPort: 8080
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: auction-house-primary-sync
+  namespace: microservices
+  annotations:
+    kubernetes.io/ingress.class: "tectonic"
+    ingress.kubernetes.io/rewrite-target: /
+spec:
+  tls:
+  - hosts:
+      - auction-house-primary-sync.local
+  rules:
+  - host: auction-house-primary-sync.local
+    http:
+      paths:
+      - backend:
+          serviceName: auction-house-primary-sync
+          servicePort: 443
+        path: /
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: auction-house-primary-sync
+  namespace: microservices
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: auction-house-primary-sync
+    spec:
+      containers:
+        - name: auction-house-primary-sync
+          image: docker-registry.local/auction-house-primary-sync
+          resources:
+            limits:
+              memory: "192Mi"
+          ports:
+            - containerPort: 8080
+          env:
+            - name: CASSANDRA_CONTACT_POINT
+              value: "cassandra-0.cassandra.databases.svc.cluster.local"

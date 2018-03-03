@@ -24,7 +24,9 @@ $worker_vm_memory = 4096
 2. Add line `172.17.4.201    docker-registry.local`
 3. Add line `172.17.4.201    hello-world-async.local`
 4. Add line `172.17.4.201    hello-world-sync.local` 
-4. Save it
+5. Add line `172.17.4.201    auction-house-primary-async.local` 
+6. Add line `172.17.4.201    auction-house-primary-sync.local`
+7. Save it
 
 ##### Starting Tectonic Kubernetes local cluster
 
@@ -43,7 +45,7 @@ cd codebase
 sbt test
 ```
 
-### Running it:
+### Running it (on local docker host):
 
 Run everything in `codebase` directory in sbt shell after project change (ie.: `project hello-world-sync`):
 
@@ -102,6 +104,14 @@ or
 docker push docker-registry.local/hello-world-async
 ```
 
+If you have in-cluster docker registry deployed you can just run this is `sbt` console:
+```
+project helloWorldAsync
+docker:publish
+```
+
+This will build docker image and publish it directly to cluster.
+
 ### [FUTURE] Publishing to AWS in-cluster Docker Registry:
 
 Sbt build can be parameterised with system property `docker.registry.host`, which allows to pass host of registry
@@ -152,6 +162,36 @@ Verify migration success:
 kubectl -n databases run --rm -i --tty cqlsh --image=cassandra --restart=Never -- sh -c 'exec cqlsh cassandra-0.cassandra.databases.svc.cluster.local'
 
 cqlsh> DESCRIBE KEYSPACE microservices;
+```
+
+### Deploying Auction House Primary microservices to Tectonic Cluster
+
+Start by publishing images to in-cluster docker registry using `sbt` console:
+ 
+```
+project auctionHousePrimarySync
+docker:publish
+project auctionHousePrimaryAsync
+docker:publish
+```
+
+Then apply kubernetes manifests:
+```bash
+kubectl apply -f infra/manifests/auction-house-primary-sync.dev.yaml
+```
+and
+```bash
+kubectl apply -f infra/manifests/auction-house-primary-async.dev.yaml
+```
+
+After a while you will be able to call both services (remember to edit `/etc/hosts` to enable DNS mappings):
+
+```bash
+curl -ik https://auction-house-primary-sync.local/_status
+```
+or
+```bash
+curl -ik https://auction-house-primary-async.local/_status
 ```
 
 ### Running gatling tests

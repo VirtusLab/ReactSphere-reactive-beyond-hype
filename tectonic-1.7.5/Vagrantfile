@@ -26,7 +26,7 @@ end
 
 $update_channel = "alpha"
 $controller_vm_memory = 1280
-$worker_vm_memory = 3072
+$worker_vm_memory = 4096
 
 if $worker_vm_memory < 1536
   puts "Workers need at least 1536 MB of memory"
