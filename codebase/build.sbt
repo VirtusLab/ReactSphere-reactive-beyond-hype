@@ -136,7 +136,6 @@ lazy val gatlingTests = (project in file("gatling-tests"))
       "ch.qos.logback"             %  "logback-classic"           % "1.1.7",
       "io.gatling.highcharts"      %  "gatling-charts-highcharts" % "2.3.0",
       "io.gatling"                 %  "gatling-test-framework"    % "2.3.0",
-      "com.danielasfregola"        %% "random-data-generator"     % "2.4",
       "org.json4s"                 %% "json4s-jackson"            % "3.6.0-M2",
       "org.json4s"                 %% "json4s-native"             % "3.6.0-M2",
       "com.typesafe"               %  "config"                    % "1.3.2"
