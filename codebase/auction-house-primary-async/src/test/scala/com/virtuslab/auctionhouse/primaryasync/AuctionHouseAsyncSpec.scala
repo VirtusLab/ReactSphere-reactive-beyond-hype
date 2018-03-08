@@ -18,6 +18,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
   with AuctionRoutes with TestAuctionServiceImpl with IdentityHelpers {
 
   import spray.json._
+  import com.virtuslab.auctions.Categories
 
   override def afterEach() = {
     clearData()
@@ -28,7 +29,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
     "create accounts" in {
       When("request to create account is sent to identity api")
       val body = CreateAccountRequest("testuser", "testpassword").toJson.prettyPrint
-      val request = HttpRequest(uri = "/api/v1/accounts", method = POST)
+      val request = HttpRequest(uri = "/accounts", method = POST)
         .withEntity(HttpEntity(`application/json`, body))
 
       Then("response should have 201 status")
@@ -43,7 +44,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
 
       When("request to create account with the same username is sent to identity api")
       val body = CreateAccountRequest("testuser", "testpassword").toJson.prettyPrint
-      val request = HttpRequest(uri = "/api/v1/accounts", method = POST)
+      val request = HttpRequest(uri = "/accounts", method = POST)
         .withEntity(HttpEntity(`application/json`, body))
 
       Then("response should have 400 status and contain an error")
@@ -60,7 +61,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
 
       When("request to sign in existing user with correct password is sent to identity api")
       val body = SignInRequest("testuser", "testpassword").toJson.prettyPrint
-      val request = HttpRequest(uri = "/api/v1/sign-in", method = POST)
+      val request = HttpRequest(uri = "/sign-in", method = POST)
         .withEntity(HttpEntity(`application/json`, body))
 
       Then("response should have 200 status containing token")
@@ -77,7 +78,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
 
       When("request to sign in existing user with incorrect password is sent to identity api")
       val invalidPasswordBody = SignInRequest("testuser", "invalid").toJson.prettyPrint
-      val invalidPasswordRequest = HttpRequest(uri = "/api/v1/sign-in", method = POST)
+      val invalidPasswordRequest = HttpRequest(uri = "/sign-in", method = POST)
         .withEntity(HttpEntity(`application/json`, invalidPasswordBody))
 
       Then("response should have 401 status and contain an error")
@@ -104,7 +105,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
         minimumPrice = BigDecimal(1.23d),
         JsObject()
       ).toJson.prettyPrint
-      val request = HttpRequest(uri = "/api/v1/auctions", method = POST)
+      val request = HttpRequest(uri = "/auctions", method = POST)
         .withEntity(HttpEntity(`application/json`, body))
 
       Then("response should have 401 status and contain an error")
@@ -125,7 +126,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
         JsObject()
       ).toJson.prettyPrint
       val authHeader = Authorization(OAuth2BearerToken("invalid"))
-      val request = HttpRequest(uri = "/api/v1/auctions", method = POST)
+      val request = HttpRequest(uri = "/auctions", method = POST)
         .withHeadersAndEntity(authHeader :: Nil, HttpEntity(`application/json`, body))
 
       Then("response should have 403 status and contain an error")
@@ -147,7 +148,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
         JsObject()
       ).toJson.prettyPrint
       val authHeader = Authorization(OAuth2BearerToken("valid-token"))
-      val request = HttpRequest(uri = "/api/v1/auctions", method = POST)
+      val request = HttpRequest(uri = "/auctions", method = POST)
         .withHeadersAndEntity(authHeader :: Nil, HttpEntity(`application/json`, body))
 
       Then("response should have 201 status and contain an auction id")
@@ -161,7 +162,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
     "reject authenticated request for auctions list without category" in {
       When("request to list auctions with valid authentication token but without category parameter is sent to auction api")
       val authHeader = Authorization(OAuth2BearerToken("valid-token"))
-      val request = HttpRequest(uri = "/api/v1/auctions", method = GET)
+      val request = HttpRequest(uri = "/auctions", method = GET)
         .withHeaders(authHeader :: Nil)
 
       Then("response should have 400 status")
@@ -172,12 +173,12 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
 
     "list existing auctions for given category when requested with correct authentication token" in {
       Given("two auctions exist in auction api")
-      addAuction("test-category", "au1", "testuser2", "auction 1", now)
-      addAuction("test-category", "au2", "testuser3", "auction 2", aBitLater)
+      addAuction(Categories(1), "au1", "testuser2", "auction 1", now)
+      addAuction(Categories(1), "au2", "testuser3", "auction 2", aBitLater)
 
       When("request to list auctions with valid authentication token is sent to auction api")
       val authHeader = Authorization(OAuth2BearerToken("valid-token"))
-      val request = HttpRequest(uri = "/api/v1/auctions?category=test-category", method = GET)
+      val request = HttpRequest(uri = s"/auctions?category=${Categories(1)}", method = GET)
         .withHeaders(authHeader :: Nil)
 
       Then("response should have 200 status and contain a list of auctions")
@@ -185,7 +186,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
         status should ===(OK)
         contentType should ===(`application/json`)
         entityAs[Auctions] should ===(Auctions(
-          category = "test-category",
+          category = Categories(1),
           List(
             AuctionInfo("au1", now, "testuser2", "auction 1", BigDecimal(0)),
             AuctionInfo("au2", aBitLater, "testuser3", "auction 2", BigDecimal(0))
@@ -201,7 +202,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
 
       When("request to fetch auction with id au2 and with valid authentication token is sent to auction api")
       val authHeader = Authorization(OAuth2BearerToken("valid-token"))
-      val request = HttpRequest(uri = "/api/v1/auctions/au2", method = GET, headers = authHeader :: Nil)
+      val request = HttpRequest(uri = "/auctions/au2", method = GET, headers = authHeader :: Nil)
 
       Then("response should have 200 status and contain auction information")
       request ~> auctionRoutes ~> check {
@@ -225,7 +226,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       When("request to bid in non-existing auction with with valid authentication token is sent to auction api")
       val authHeader = Authorization(OAuth2BearerToken("valid-token"))
       val body = BidRequest(BigDecimal(10.0d)).toJson.prettyPrint
-      val createBidRequest = HttpRequest(uri = "/api/v1/auctions/au1/bids", method = POST)
+      val createBidRequest = HttpRequest(uri = "/auctions/au1/bids", method = POST)
         .withHeadersAndEntity(authHeader :: Nil, HttpEntity(`application/json`, body))
 
       Then("response should have 404 status")
@@ -242,7 +243,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       When("request to bid in auction with with valid authentication token is sent to auction api")
       val authHeader = Authorization(OAuth2BearerToken("valid-token"))
       val body = BidRequest(BigDecimal(10.0d)).toJson.prettyPrint
-      val createBidRequest = HttpRequest(uri = "/api/v1/auctions/au1/bids", method = POST)
+      val createBidRequest = HttpRequest(uri = "/auctions/au1/bids", method = POST)
         .withHeadersAndEntity(authHeader :: Nil, HttpEntity(`application/json`, body))
 
       Then("response should have 201 status")
@@ -251,7 +252,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       }
 
       When("request to fetch auction by id with valid authentication token is sent to auction api")
-      val fetchAuctionRequest = HttpRequest(uri = "/api/v1/auctions/au1", method = GET, headers = authHeader :: Nil)
+      val fetchAuctionRequest = HttpRequest(uri = "/auctions/au1", method = GET, headers = authHeader :: Nil)
 
       Then("response should have 200 status and contain created bid")
       fetchAuctionRequest ~> auctionRoutes ~> check {
@@ -280,7 +281,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       When("request to bid in auction with amount 10 is sent to auction api with valid authentication token")
       val authHeader = Authorization(OAuth2BearerToken("valid-token"))
       val body = BidRequest(BigDecimal(10.0d)).toJson.prettyPrint
-      val createBidRequest = HttpRequest(uri = "/api/v1/auctions/au1/bids", method = POST)
+      val createBidRequest = HttpRequest(uri = "/auctions/au1/bids", method = POST)
         .withHeadersAndEntity(authHeader :: Nil, HttpEntity(`application/json`, body))
 
       Then("response should have 409 status")

@@ -12,6 +12,7 @@ import org.scalatra._
 import scala.util.Try
 
 class AuctionsServlet extends BaseServlet with Authentication {
+
   override protected implicit def jsonFormats: Formats = DefaultFormats
 
   before() {

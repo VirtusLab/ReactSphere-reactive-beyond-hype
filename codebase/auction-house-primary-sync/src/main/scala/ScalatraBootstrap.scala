@@ -7,6 +7,7 @@ import com.virtuslab.auctionHouse.sync.signIn.SignInServlet
 import org.scalatra._
 
 class ScalatraBootstrap extends LifeCycle {
+
   val apiVersion = "/api/v1"
 
   override def init(context: ServletContext) {
@@ -15,5 +16,6 @@ class ScalatraBootstrap extends LifeCycle {
     context.mount(new SignInServlet, s"$apiVersion/sign-in/*")
     context.mount(new AuctionsServlet, s"$apiVersion/auctions/*")
   }
+  
 }
 

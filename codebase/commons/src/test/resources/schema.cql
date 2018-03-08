@@ -1,3 +1,10 @@
+-- for singular cassandra node use this:
+-- CREATE  KEYSPACE microservices
+--   WITH REPLICATION = {
+--      'class' : 'SimpleStrategy', 'replication_factor' : 1
+--   };
+
+-- for cluster with at least 2 nodes use this:
 -- CREATE  KEYSPACE microservices
 --   WITH REPLICATION = {
 --      'class' : 'SimpleStrategy', 'replication_factor' : 2

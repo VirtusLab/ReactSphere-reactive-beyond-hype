@@ -2,8 +2,10 @@ package com.virtuslab.auctionHouse.sync.auctions
 
 import java.util.UUID
 
+import com.datastax.driver.core.Session
 import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.driver.core.utils.UUIDs
+import com.datastax.driver.mapping.Mapper
 import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.{InvalidBidException, InvalidCategoryException, UnknownEntityException}
 import com.virtuslab.auctionHouse.sync.cassandra.SessionManager.ScalaMapper
 import com.virtuslab.auctionHouse.sync.cassandra._
@@ -13,11 +15,11 @@ import com.virtuslab.auctions.Categories
 import scala.collection.JavaConverters._
 
 class AuctionsService {
-  lazy val auctionsMapper = SessionManager.mapper(classOf[Auction])
-  lazy val accountsMapper = SessionManager.mapper(classOf[Account])
-  lazy val auctionsViewMapper = SessionManager.mapper(classOf[AuctionView])
-  lazy val bidsMapper = SessionManager.mapper(classOf[Bid])
-  lazy val session = SessionManager.session
+  lazy val auctionsMapper: Mapper[Auction] = SessionManager.mapper(classOf[Auction])
+  lazy val accountsMapper: Mapper[Account] = SessionManager.mapper(classOf[Account])
+  lazy val auctionsViewMapper: Mapper[AuctionView] = SessionManager.mapper(classOf[AuctionView])
+  lazy val bidsMapper: Mapper[Bid] = SessionManager.mapper(classOf[Bid])
+  lazy val session: Session = SessionManager.session
 
   private val categoriesSet = Categories.toSet
 

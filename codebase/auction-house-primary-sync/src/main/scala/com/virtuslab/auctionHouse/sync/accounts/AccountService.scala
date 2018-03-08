@@ -1,5 +1,6 @@
 package com.virtuslab.auctionHouse.sync.accounts
 
+import com.datastax.driver.mapping.Mapper
 import com.virtuslab.auctionHouse.sync.accounts.AccountService.DuplicatedEntityException
 import com.virtuslab.auctionHouse.sync.cassandra.SessionManager.ScalaMapper
 import com.virtuslab.auctionHouse.sync.cassandra.{Account, SessionManager}
@@ -7,7 +8,7 @@ import com.virtuslab.identity.CreateAccountRequest
 
 class AccountService {
 
-  lazy val accountMapper = SessionManager.mapper(classOf[Account])
+  lazy val accountMapper: Mapper[Account] = SessionManager.mapper(classOf[Account])
 
   def createAccount(req: CreateAccountRequest): Unit = {
     accountMapper.getOption(req.username).map { u =>

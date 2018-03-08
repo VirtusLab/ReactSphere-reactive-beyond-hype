@@ -4,6 +4,7 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.{Date, UUID}
 
+import com.datastax.driver.mapping.Mapper
 import com.virtuslab.auctionHouse.sync.BaseServlet
 import com.virtuslab.auctionHouse.sync.cassandra.SessionManager.ScalaMapper
 import com.virtuslab.auctionHouse.sync.cassandra.{Account, SessionManager, Token}
@@ -18,8 +19,8 @@ class SignInServlet extends BaseServlet {
     contentType = formats("json")
   }
 
-  lazy val tokensMapper = SessionManager.mapper(classOf[Token])
-  lazy val accountsMapper = SessionManager.mapper(classOf[Account])
+  lazy val tokensMapper: Mapper[Token] = SessionManager.mapper(classOf[Token])
+  lazy val accountsMapper: Mapper[Account] = SessionManager.mapper(classOf[Account])
 
   post("/") {
     val signInReq = parsedBody.extract[SignInRequest]

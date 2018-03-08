@@ -2,6 +2,7 @@ package com.virtuslab.auctionHouse.sync.auctions
 
 import java.util.{Date, UUID}
 
+import com.datastax.driver.core.Session
 import com.datastax.driver.core.utils.UUIDs
 import com.datastax.driver.mapping.Mapper
 import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.{InvalidCategoryException, UnknownEntityException}
@@ -14,16 +15,16 @@ import org.scalatest.{Matchers, WordSpec}
 
 class AuctionsServiceIntegrationTest extends WordSpec with CassandraIntegrationTest with Matchers {
 
-  val sessionManager = new SessionManager {
-    override lazy val session = getSession
+  private val sessionManager = new SessionManager {
+    override lazy val session: Session = getSession
   }
 
-  val auctionsService = new AuctionsService {
+  private val auctionsService = new AuctionsService {
     override lazy val auctionsMapper: Mapper[Auction] = sessionManager.mapper(classOf[Auction])
-    override lazy val accountsMapper = sessionManager.mapper(classOf[Account])
-    override lazy val auctionsViewMapper = sessionManager.mapper(classOf[AuctionView])
-    override lazy val bidsMapper = sessionManager.mapper(classOf[Bid])
-    override lazy val session = sessionManager.session
+    override lazy val accountsMapper: Mapper[Account] = sessionManager.mapper(classOf[Account])
+    override lazy val auctionsViewMapper: Mapper[AuctionView] = sessionManager.mapper(classOf[AuctionView])
+    override lazy val bidsMapper: Mapper[Bid] = sessionManager.mapper(classOf[Bid])
+    override lazy val session: Session = sessionManager.session
   }
 
   private def randomAuction = new Auction(Categories.head, new java.util.Date(),

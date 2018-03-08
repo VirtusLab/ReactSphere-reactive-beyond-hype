@@ -127,9 +127,9 @@ class TestableAuctionsServlet extends AuctionsServlet {
   when(resultMock.all()).thenReturn(seqAsJavaList(Seq(new Auction(Categories.head, new java.util.Date(),
     UUID.randomUUID(), "a", "a", "a", "a", new java.math.BigDecimal(0)))))
 
-  override lazy val auctionsService = new AuctionsService {
-    override lazy val auctionsMapper = mapperMock
-    override lazy val session = sessionMock
+  override lazy val auctionsService: AuctionsService = new AuctionsService {
+    override lazy val auctionsMapper: Mapper[Auction] = mapperMock
+    override lazy val session: Session = sessionMock
 
     override def createAuction(auctionRequest: CreateAuctionRequest, owner: String): UUID = {
       TestableAuctionsServlet.auctionUuid
@@ -152,5 +152,5 @@ class TestableAuctionsServlet extends AuctionsServlet {
   }
 }
 object TestableAuctionsServlet {
-  val auctionUuid = UUID.randomUUID()
+  val auctionUuid: UUID = UUID.randomUUID()
 }

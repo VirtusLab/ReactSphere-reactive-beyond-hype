@@ -47,6 +47,6 @@ class TestableSignInServlet extends SignInServlet {
 
   private val tokensMapperMock = mock(classOf[Mapper[Token]])
 
-  override lazy val tokensMapper = tokensMapperMock
-  override lazy val accountsMapper = accountsMapperMock
+  override lazy val tokensMapper: Mapper[Token] = tokensMapperMock
+  override lazy val accountsMapper: Mapper[Account] = accountsMapperMock
 }

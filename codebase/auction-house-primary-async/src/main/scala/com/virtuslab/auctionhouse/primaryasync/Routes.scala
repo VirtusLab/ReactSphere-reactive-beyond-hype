@@ -15,11 +15,18 @@ trait Routes extends SprayJsonSupport with DefaultJsonProtocol
   lazy val routes: Route =
     path("_status") {
       complete(Status())
-    } ~ identityRoutes ~ auctionRoutes
+    } ~
+      pathPrefix("api") {
+        pathPrefix("v1") {
+          identityRoutes ~
+            auctionRoutes
+        }
+      }
 
   private lazy val version = System.getProperty("service.version", "unknown")
 
   implicit lazy val statusFormat: RootJsonFormat[Status] = jsonFormat1(Status)
 
   case class Status(version: String = version)
+
 }
