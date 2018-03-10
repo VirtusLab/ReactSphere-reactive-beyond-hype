@@ -11,12 +11,13 @@ branches:
 
 # build with coverage
 script:
-  - ./codebase/sbt clean coverage test coverageReport &&
-    ./codebase/sbt coverageAggregate
+  - cd ./codebase &&
+    ./sbt clean coverage test coverageReport &&
+    ./sbt coverageAggregate
 
 # coveralls integration
 after_success:
-  - sbt coveralls
+  - cd ./codebase && ./sbt coveralls
 
 # Use container-based infrastructure
 sudo: false
