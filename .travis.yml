@@ -1,0 +1,34 @@
+language: scala
+scala:
+    - "2.12.4"
+
+jdk:
+    - oraclejdk8
+
+branches:
+  only:
+    - master
+
+# build with coverage
+script:
+  - cd ./codebase &&
+    ./sbt clean coverage test coverageReport &&
+    ./sbt coverageAggregate
+
+# coveralls integration
+after_success:
+  - cd ./codebase && ./sbt coveralls
+
+# Use container-based infrastructure
+sudo: false
+
+# These directories are cached to S3 at the end of the build
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt
+
+before_cache:
+  # Cleanup the cached directories to avoid unnecessary cache updates
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
+  - find $HOME/.sbt        -name "*.lock"               -print -delete
