@@ -19,6 +19,8 @@ lazy val commonSettings = Seq(
   dockerUpdateLatest  := true,
   dockerRepository    := Some(System.getProperty("docker.registry.host", "docker-registry.local")),
 
+  coverageEnabled := true,
+
   javaOptions in Universal ++= Seq(
     "-J-XX:+UnlockExperimentalVMOptions",
     "-J-XX:+UseCGroupMemoryLimitForHeap",

@@ -1,9 +1,11 @@
+[![Build Status](https://travis-ci.org/VirtusLab/ReactSphere-reactive-beyond-hype.svg)](https://travis-ci.org/VirtusLab/ReactSphere-reactive-beyond-hype)
+[![Coverage Status](https://coveralls.io/repos/github/VirtusLab/ReactSphere-reactive-beyond-hype/badge.svg)](https://coveralls.io/github/VirtusLab/ReactSphere-reactive-beyond-hype)
+
 # ReactSphere-reactive-beyond-hype
 Repo for presentation on ReactSphere: Reactive beyond hype
 
 ### Requirements (with install instructions:)
  * ammonite ( tested on ver. 1.0.x, http://ammonite.io/#Ammonite-REPL )
- * sbt 
  * Docker ( tested on ver. 17.12.x, https://www.docker.com/get-docker , also make sure you start service e.g. `sudo systemctl start docker` and add your user to docker group `sudo usermod -a -G docker $YOUR_USER`)
  * kubectl (https://kubernetes.io/docs/tasks/tools/install-kubectl/ )
  * Vagrant ( tested on ver. 2.0.x, https://www.vagrantup.com/downloads.html )
@@ -42,7 +44,7 @@ vagrant up
 ### Testing microservices:
 ```
 cd codebase
-sbt test
+./sbt test
 ```
 
 ### Running it (on local docker host):
@@ -104,7 +106,7 @@ or
 docker push docker-registry.local/hello-world-async
 ```
 
-If you have in-cluster docker registry deployed you can just run this is `sbt` console:
+If you have in-cluster docker registry deployed you can just run this is `./sbt` console:
 ```
 project helloWorldAsync
 docker:publish
@@ -117,7 +119,7 @@ This will build docker image and publish it directly to cluster.
 Sbt build can be parameterised with system property `docker.registry.host`, which allows to pass host of registry
 different than `docker-registry.local`. Docker daemon has to be signed in (via `docker login` command) to given 
 registry beforehand. After that it will be possible to use 
-`sbt -Ddocker.registry.host=https://prod.registry.domain.com docker:publish` to publish images to prod registry. 
+`./sbt -Ddocker.registry.host=https://prod.registry.domain.com docker:publish` to publish images to prod registry. 
 
 ### Running applications in cluster:
 
@@ -166,7 +168,7 @@ cqlsh> DESCRIBE KEYSPACE microservices;
 
 ### Deploying Auction House Primary microservices to Tectonic Cluster
 
-Start by publishing images to in-cluster docker registry using `sbt` console:
+Start by publishing images to in-cluster docker registry using `./sbt` console:
  
 ```
 project auctionHousePrimarySync
@@ -198,5 +200,5 @@ curl -ik https://auction-house-primary-async.local/_status
 
 To run tests make sure that server is started and correct address is pointed in config. Then exec:
 ```bash
-sbt gatling:test
+./sbt gatling:test
 ```
