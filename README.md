@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/VirtusLab/ReactSphere-reactive-beyond-hype.svg)](https://travis-ci.org/VirtusLab/ReactSphere-reactive-beyond-hype)
+[![Coverage Status](https://coveralls.io/repos/github/VirtusLab/ReactSphere-reactive-beyond-hype/badge.svg)](https://coveralls.io/github/VirtusLab/ReactSphere-reactive-beyond-hype)
+
 # ReactSphere-reactive-beyond-hype
 Repo for presentation on ReactSphere: Reactive beyond hype
 
