@@ -104,3 +104,5 @@ tectonic-1.7.5/provisioning/tectonic/tls/kubelet.key
 tectonic-1.7.5/provisioning/tectonic/tls/service-account.key
 tectonic-1.7.5/provisioning/tectonic/tls/service-account.pub
 tectonic-1.7.5/provisioning/worker.ign.merged
+
+cassandra_data/

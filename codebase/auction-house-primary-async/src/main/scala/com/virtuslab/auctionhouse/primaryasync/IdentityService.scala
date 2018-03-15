@@ -5,8 +5,9 @@ import java.time.LocalDateTime
 import java.util.{Date, UUID}
 
 import com.datastax.driver.core.{ResultSet, Session}
-import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.driver.core.querybuilder.QueryBuilder.{insertInto, select, eq => equal}
+import com.typesafe.scalalogging.Logger
+import com.virtuslab.TraceId
 import com.virtuslab.cassandra.CassandraClient
 import com.virtuslab.identity._
 
@@ -14,11 +15,11 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait IdentityService {
 
-  def createUser(request: CreateAccountRequest): Future[Unit]
+  def createUser(request: CreateAccountRequest)(implicit traceId: TraceId): Future[Unit]
 
-  def signIn(request: SignInRequest): Future[String]
+  def signIn(request: SignInRequest)(implicit traceId: TraceId): Future[String]
 
-  def validateToken(token: String): Future[Option[String]]
+  def validateToken(token: String): Future[Option[String]] // todo add traceId when Identity is a separate service
 
   case class DuplicateUser(username: String) extends RuntimeException(username)
 
@@ -31,11 +32,13 @@ trait IdentityServiceImpl extends IdentityService {
 
   import com.virtuslab.AsyncUtils.Implicits._
 
-  implicit def executionContext: ExecutionContext
+  protected implicit def executionContext: ExecutionContext
+
+  protected def logger: Logger
 
   private lazy val sessionFuture: Future[Session] = getSessionAsync
 
-  def createUser(request: CreateAccountRequest): Future[Unit] = {
+  def createUser(request: CreateAccountRequest)(implicit traceId: TraceId): Future[Unit] = {
     val user = request.createUser
 
     val query = insertInto("microservices", "accounts")
@@ -51,7 +54,7 @@ trait IdentityServiceImpl extends IdentityService {
     }
   }
 
-  def signIn(request: SignInRequest): Future[String] = {
+  def signIn(request: SignInRequest)(implicit traceId: TraceId): Future[String] = {
 
     def userOrMissingUser(username: String, passwordHashRs: ResultSet): Future[User] = Future {
       val maybeRow = Option(passwordHashRs.one())

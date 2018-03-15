@@ -1,7 +1,9 @@
 package com.virtuslab.auctionhouse.primaryasync
 
 import com.datastax.driver.core.utils.UUIDs
+import com.typesafe.scalalogging.Logger
 import com.virtuslab.auctionhouse.cassandra.CassandraIntegrationTest
+import com.virtuslab.TraceId
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{GivenWhenThen, Matchers, OptionValues, WordSpec}
 import spray.json.{JsArray, JsObject, JsString}
@@ -15,6 +17,8 @@ class AuctionServiceIntegrationTest extends WordSpec with Matchers with ScalaFut
   with IdentityHelpers with TestIdentityServiceImpl {
 
   implicit val executionContext: ExecutionContext = Implicits.global
+  implicit val traceId: TraceId = new TraceId(UUIDs.random().toString)
+  override protected def logger: Logger = Logger(getClass)
 
   "Auction service" should {
 

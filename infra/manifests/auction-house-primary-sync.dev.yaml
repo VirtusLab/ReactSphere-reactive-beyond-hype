@@ -49,6 +49,7 @@ spec:
     metadata:
       labels:
         app: auction-house-primary-sync
+        monitoring-group: microservices-metrics
     spec:
       containers:
         - name: auction-house-primary-sync
@@ -58,6 +59,7 @@ spec:
               memory: "192Mi"
           ports:
             - containerPort: 8080
+            - containerPort: 8081
           env:
             - name: CASSANDRA_CONTACT_POINT
               value: "cassandra-0.cassandra.databases.svc.cluster.local"

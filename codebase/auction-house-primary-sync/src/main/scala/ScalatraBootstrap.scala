@@ -1,9 +1,9 @@
 
 import com.virtuslab.auctionHouse.sync.StatusServlet
-import javax.servlet.ServletContext
 import com.virtuslab.auctionHouse.sync.accounts.AccountsServlet
 import com.virtuslab.auctionHouse.sync.auctions.AuctionsServlet
 import com.virtuslab.auctionHouse.sync.signIn.SignInServlet
+import javax.servlet.ServletContext
 import org.scalatra._
 
 class ScalatraBootstrap extends LifeCycle {
@@ -16,6 +16,6 @@ class ScalatraBootstrap extends LifeCycle {
     context.mount(new SignInServlet, s"$apiVersion/sign-in/*")
     context.mount(new AuctionsServlet, s"$apiVersion/auctions/*")
   }
-  
+
 }
 

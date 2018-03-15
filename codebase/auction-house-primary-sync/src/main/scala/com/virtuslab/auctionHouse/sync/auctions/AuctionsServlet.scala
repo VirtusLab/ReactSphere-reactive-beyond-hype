@@ -23,44 +23,93 @@ class AuctionsServlet extends BaseServlet with Authentication {
 
   get("/") {
     auth { _ =>
-      params.get("category").map { category =>
+      val traceId = getTraceId
+      val histogramTimer = requestsLatency.labels("listAuctions").startTimer()
+
+      val result = params.get("category").map { category =>
         Try(auctionsService.listAuctions(category)).map(Ok(_))
           .recover {
             case e: InvalidCategoryException => BadRequest(e.getMessage)
           }.get
       }.getOrElse(BadRequest())
+
+      histogramTimer.observeDuration()
+
+      result
     }
   }
 
   post("/") {
     auth { account =>
+      val histogramTimer = requestsLatency.labels("createAuction").startTimer()
+
       val auctionRequest = parsedBody.extract[CreateAuctionRequest]
-      Try(auctionsService.createAuction(auctionRequest, account.username)).map(id => Created(id))
+      val result = Try(auctionsService.createAuction(auctionRequest, account.username)).map(id => Created(id))
         .recover {
           case e: InvalidCategoryException => BadRequest(e.getMessage)
         }.get
+
+      histogramTimer.observeDuration()
+
+      result
     }
   }
 
   post("/:id/bids") {
     auth { user =>
+      val traceId = getTraceId
+      val histogramTimer = requestsLatency.labels("bidInAuction").startTimer()
       val bidValue = parsedBody.extract[BidRequest].amount
-      Try(auctionsService.bidInAuction(UUID.fromString(params("id")), bidValue, user.username))
-        .map(_ => Created())
+      val auctionId = params("id")
+
+      logger.info(s"[${traceId.id}] Received bid in auction request for auction '$auctionId'.")
+
+      val attempt = Try(auctionsService.bidInAuction(UUID.fromString(auctionId), bidValue, user.username))
+        .map(_ => {
+          logger.info(s"[${traceId.id}] Added bid for auction '$auctionId'.")
+          Created()
+        })
         .recover {
-          case e: EntityNotFoundException => BadRequest(e.getMessage)
-          case _: InvalidBidException => Conflict(ErrorResponse("your bid is not high enough"))
-        }.get
+          case e: EntityNotFoundException =>
+            logger.warn(s"[${traceId.id}] Auction '$auctionId' was not found.")
+            BadRequest(e.getMessage)
+          case _: InvalidBidException =>
+            logger.warn(s"[${traceId.id}] Bid was too small for auction '$auctionId'.")
+            Conflict(ErrorResponse("your bid is not high enough"))
+        }
+
+      if (attempt.isFailure) {
+        logger.error(s"[${traceId.id}] Error occured while adding bid for auction '$auctionId':", attempt.failed.get)
+      }
+
+      histogramTimer.observeDuration()
+
+      attempt.get
     }
   }
 
   get("/:id") {
     auth { _ =>
-      Try(auctionsService.getAuction(UUID.fromString(params("id"))))
-        .map(Ok(_))
+      val traceId = getTraceId
+      val histogramTimer = requestsLatency.labels("fetchAuction").startTimer()
+      val auctionId = params("id")
+
+      logger.info(s"[${traceId.id}] Got fetch request for auction '$auctionId'.")
+
+      val attempt = Try(auctionsService.getAuction(UUID.fromString(auctionId)))
+        .map(auction => {
+          logger.info(s"[${traceId.id}] Fetched auction '$auctionId'.")
+          Ok(auction)
+        })
         .recover {
           case e: EntityNotFoundException => BadRequest(e.getMessage)
-        }.get
+        }
+
+
+
+      histogramTimer.observeDuration()
+
+      attempt.get
     }
   }
 }

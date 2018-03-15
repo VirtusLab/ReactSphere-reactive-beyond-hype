@@ -8,6 +8,8 @@ import java.util.UUID
 import com.datastax.driver.core.querybuilder.QueryBuilder.{desc, insertInto, select, eq => equal}
 import com.datastax.driver.core.utils.UUIDs
 import com.datastax.driver.core.{ResultSet, Row, Session}
+import com.typesafe.scalalogging.Logger
+import com.virtuslab.TraceId
 import com.virtuslab.cassandra.CassandraClient
 import spray.json._
 
@@ -52,13 +54,13 @@ trait AuctionService {
 
   case class Bid(bidId: String, bidder: String, amount: BigDecimal)
 
-  def createAuction(command: CreateAuction): Future[String]
+  def createAuction(command: CreateAuction)(implicit traceId: TraceId): Future[String]
 
-  def listAuctions(category: String): Future[List[AuctionInfo]]
+  def listAuctions(category: String)(implicit traceId: TraceId): Future[List[AuctionInfo]]
 
-  def getAuction(auctionId: String): Future[AuctionResponse]
+  def getAuction(auctionId: String)(implicit traceId: TraceId): Future[AuctionResponse]
 
-  def bidInAuction(command: BidInAuction): Future[Unit]
+  def bidInAuction(command: BidInAuction)(implicit traceId: TraceId): Future[Unit]
 }
 
 trait AuctionServiceImpl extends AuctionService {
@@ -66,11 +68,13 @@ trait AuctionServiceImpl extends AuctionService {
 
   import com.virtuslab.AsyncUtils.Implicits._
 
-  implicit def executionContext: ExecutionContext
+  protected implicit def executionContext: ExecutionContext
+
+  protected def logger: Logger
 
   private lazy val sessionFuture: Future[Session] = getSessionAsync
 
-  def createAuction(command: CreateAuction): Future[String] = {
+  def createAuction(command: CreateAuction)(implicit traceId: TraceId): Future[String] = {
     val auctionId = UUIDs.random()
     val timestamp = Timestamp.valueOf(LocalDateTime.now())
     val query = insertInto("microservices", "auctions")
@@ -89,7 +93,7 @@ trait AuctionServiceImpl extends AuctionService {
     } yield auctionId.toString
   }
 
-  def listAuctions(category: String): Future[List[AuctionInfo]] = {
+  def listAuctions(category: String)(implicit traceId: TraceId): Future[List[AuctionInfo]] = {
     val query = select("auction_id", "created_at", "owner", "title", "minimum_price")
       .from("microservices", "auctions")
       .where(equal("category", category))
@@ -110,7 +114,7 @@ trait AuctionServiceImpl extends AuctionService {
     } yield auctionInfoesFuture
   }
 
-  def getAuction(auctionId: String): Future[AuctionResponse] = {
+  def getAuction(auctionId: String)(implicit traceId: TraceId): Future[AuctionResponse] = {
     val auctionIdUuid = UUID fromString auctionId
 
     val auctionQuery = select().all()
@@ -149,7 +153,7 @@ trait AuctionServiceImpl extends AuctionService {
     } yield auction
   }
 
-  def bidInAuction(command: BidInAuction): Future[Unit] = {
+  def bidInAuction(command: BidInAuction)(implicit traceId: TraceId): Future[Unit] = {
     val bidId = UUIDs.timeBased()
     val auctionId = UUID fromString command.auctionId
     val fetchExistingBidsQuery = select().all()
