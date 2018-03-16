@@ -3,6 +3,7 @@ package com.virtuslab.auctionhouse.cassandra
 import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.driver.core.{ResultSet, Session}
 import com.virtuslab.cassandra.CassandraClient
+import org.apache.log4j.{Level, Logger}
 import org.cassandraunit.CassandraCQLUnit
 import org.cassandraunit.dataset.cql.ClassPathCQLDataSet
 import org.junit.runner.Description
@@ -13,6 +14,8 @@ import scala.concurrent.Future
 
 trait CassandraIntegrationTest extends TestSuiteMixin with CassandraClient {
   this: TestSuite =>
+
+  Logger.getLogger("Sigar").setLevel(Level.OFF)
 
   val keyspace = "microservices"
 

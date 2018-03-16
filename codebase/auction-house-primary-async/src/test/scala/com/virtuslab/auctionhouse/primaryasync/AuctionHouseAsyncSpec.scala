@@ -7,18 +7,31 @@ import akka.http.scaladsl.model.HttpMethods.{GET, POST}
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import com.datastax.driver.core.utils.UUIDs
+import com.typesafe.scalalogging.Logger
 import com.virtuslab.identity.{CreateAccountRequest, SignInRequest, TokenResponse}
+import com.virtuslab.{RequestMetrics, TraceId}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterEach, GivenWhenThen, Matchers, WordSpec}
+
+import scala.concurrent.ExecutionContext
 
 class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures with ScalatestRouteTest
   with GivenWhenThen with BeforeAndAfterEach
   with IdentityRoutes with TestIdentityServiceImpl
-  with AuctionRoutes with TestAuctionServiceImpl with IdentityHelpers {
+  with AuctionRoutes with TestAuctionServiceImpl with IdentityHelpers
+  with RequestMetrics {
 
-  import spray.json._
   import com.virtuslab.auctions.Categories
+  import spray.json._
+
+  implicit val traceId: TraceId = TraceId(UUIDs.random().toString)
+
+  protected def logger: Logger = Logger(getClass)
+
+  protected def executionContext: ExecutionContext = system.dispatcher
 
   override def afterEach() = {
     clearData()
@@ -26,6 +39,8 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
   }
 
   "Identity module" should {
+    val sealedIdentityRoutes = Route.seal(identityRoutes)
+
     "create accounts" in {
       When("request to create account is sent to identity api")
       val body = CreateAccountRequest("testuser", "testpassword").toJson.prettyPrint
@@ -33,7 +48,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
         .withEntity(HttpEntity(`application/json`, body))
 
       Then("response should have 201 status")
-      request ~> identityRoutes ~> check {
+      request ~> sealedIdentityRoutes ~> check {
         status should ===(Created)
       }
     }
@@ -48,10 +63,10 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
         .withEntity(HttpEntity(`application/json`, body))
 
       Then("response should have 400 status and contain an error")
-      request ~> identityRoutes ~> check {
+      request ~> sealedIdentityRoutes ~> check {
         status should ===(BadRequest)
         contentType should ===(`application/json`)
-        entityAs[Error] should ===(Error("user testuser already exists"))
+        entityAs[Error] should ===(Error("user 'testuser' already exists"))
       }
     }
 
@@ -65,7 +80,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
         .withEntity(HttpEntity(`application/json`, body))
 
       Then("response should have 200 status containing token")
-      request ~> identityRoutes ~> check {
+      request ~> sealedIdentityRoutes ~> check {
         status should ===(OK)
         contentType should ===(`application/json`)
         entityAs[TokenResponse] should ===(TokenResponse("f60e7614-0d56-4ef5-b6c8-3939d34d5ec2"))
@@ -82,7 +97,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
         .withEntity(HttpEntity(`application/json`, invalidPasswordBody))
 
       Then("response should have 401 status and contain an error")
-      invalidPasswordRequest ~> identityRoutes ~> check {
+      invalidPasswordRequest ~> sealedIdentityRoutes ~> check {
         status should ===(Unauthorized)
         contentType should ===(`application/json`)
         entityAs[Error] should ===(Error("wrong password or username"))
@@ -95,6 +110,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
 
     val now = (new Date).getTime
     val aBitLater = now + 100L
+    val sealedAuctionRoutes = Route.seal(auctionRoutes)
 
     "reject auction creation requests if authentication token is missing" in {
       When("request to create an auction without authentication token is sent to auction api")
@@ -105,11 +121,14 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
         minimumPrice = BigDecimal(1.23d),
         JsObject()
       ).toJson.prettyPrint
+      //      val request = HttpRequest(uri = "/auctions", method = POST)
+      //        .withEntity(HttpEntity(`application/json`, body))
+      val authHeader = Authorization(OAuth2BearerToken("invalid"))
       val request = HttpRequest(uri = "/auctions", method = POST)
         .withEntity(HttpEntity(`application/json`, body))
 
       Then("response should have 401 status and contain an error")
-      request ~> auctionRoutes ~> check {
+      request ~> sealedAuctionRoutes ~> check {
         status should ===(Unauthorized)
         contentType should ===(`application/json`)
         entityAs[Error] should ===(Error("authentication token is missing"))
@@ -130,7 +149,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
         .withHeadersAndEntity(authHeader :: Nil, HttpEntity(`application/json`, body))
 
       Then("response should have 403 status and contain an error")
-      request ~> auctionRoutes ~> check {
+      request ~> sealedAuctionRoutes ~> check {
         status should ===(Forbidden)
         contentType should ===(`application/json`)
         entityAs[Error] should ===(Error("authentication token is invalid"))
@@ -152,7 +171,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
         .withHeadersAndEntity(authHeader :: Nil, HttpEntity(`application/json`, body))
 
       Then("response should have 201 status and contain an auction id")
-      request ~> auctionRoutes ~> check {
+      request ~> sealedAuctionRoutes ~> check {
         status should ===(Created)
         contentType should ===(`application/json`)
         entityAs[CreatedAuction] should ===(CreatedAuction(expectedAuctionId))
@@ -166,7 +185,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
         .withHeaders(authHeader :: Nil)
 
       Then("response should have 400 status")
-      request ~> auctionRoutes ~> check {
+      request ~> sealedAuctionRoutes ~> check {
         status should ===(BadRequest)
       }
     }
@@ -182,7 +201,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
         .withHeaders(authHeader :: Nil)
 
       Then("response should have 200 status and contain a list of auctions")
-      request ~> auctionRoutes ~> check {
+      request ~> sealedAuctionRoutes ~> check {
         status should ===(OK)
         contentType should ===(`application/json`)
         entityAs[Auctions] should ===(Auctions(
@@ -205,7 +224,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       val request = HttpRequest(uri = "/auctions/au2", method = GET, headers = authHeader :: Nil)
 
       Then("response should have 200 status and contain auction information")
-      request ~> auctionRoutes ~> check {
+      request ~> sealedAuctionRoutes ~> check {
         status should ===(OK)
         contentType should ===(`application/json`)
         entityAs[AuctionResponse] should ===(AuctionResponse(
@@ -230,7 +249,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
         .withHeadersAndEntity(authHeader :: Nil, HttpEntity(`application/json`, body))
 
       Then("response should have 404 status")
-      createBidRequest ~> auctionRoutes ~> check {
+      createBidRequest ~> sealedAuctionRoutes ~> check {
         status should ===(NotFound)
       }
     }
@@ -247,7 +266,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
         .withHeadersAndEntity(authHeader :: Nil, HttpEntity(`application/json`, body))
 
       Then("response should have 201 status")
-      createBidRequest ~> auctionRoutes ~> check {
+      createBidRequest ~> sealedAuctionRoutes ~> check {
         status should ===(Created)
       }
 
@@ -255,7 +274,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       val fetchAuctionRequest = HttpRequest(uri = "/auctions/au1", method = GET, headers = authHeader :: Nil)
 
       Then("response should have 200 status and contain created bid")
-      fetchAuctionRequest ~> auctionRoutes ~> check {
+      fetchAuctionRequest ~> sealedAuctionRoutes ~> check {
         status should ===(OK)
         contentType should ===(`application/json`)
         entityAs[AuctionResponse] should ===(
@@ -285,7 +304,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
         .withHeadersAndEntity(authHeader :: Nil, HttpEntity(`application/json`, body))
 
       Then("response should have 409 status")
-      createBidRequest ~> auctionRoutes ~> check {
+      createBidRequest ~> sealedAuctionRoutes ~> check {
         status should ===(Conflict)
         contentType should ===(`application/json`)
         entityAs[Error] should ===(Error("your bid is not high enough"))

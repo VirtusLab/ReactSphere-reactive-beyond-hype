@@ -1,0 +1,68 @@
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: prometheus-k8s
+  namespace: microservices
+rules:
+  - verbs:
+      - get
+      - list
+      - watch
+    apiGroups:
+      - ''
+    resources:
+      - services
+      - endpoints
+      - pods
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: prometheus-k8s
+  namespace: microservices
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: prometheus-k8s
+subjects:
+- kind: ServiceAccount
+  name: prometheus-k8s
+  namespace: tectonic-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: microservices-metrics
+    monitoring: microservices-metrics
+  annotations:
+    alpha.monitoring.coreos.com/non-namespaced: "true"
+  name: microservices-metrics
+  namespace: microservices
+spec:
+  ports:
+  - name: http-metrics
+    port: 8080
+    targetPort: 8081
+    protocol: TCP
+  selector:
+    monitoring-group: microservices-metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: microservices
+  labels:
+    k8s-app: microservices
+  namespace: tectonic-system
+spec:
+  jobLabel: microservices
+  selector:
+    matchLabels:
+      monitoring: microservices-metrics
+  namespaceSelector:
+    matchNames:
+    - microservices
+  endpoints:
+  - port: http-metrics
+    interval: 3s

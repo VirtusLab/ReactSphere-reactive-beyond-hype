@@ -4,16 +4,22 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
+import com.typesafe.scalalogging.Logger
+import com.virtuslab.RequestMetrics
 import com.virtuslab.cassandra.CassandraClientImpl
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 trait Routes extends SprayJsonSupport with DefaultJsonProtocol
   with IdentityRoutes with IdentityServiceImpl
   with AuctionRoutes with AuctionServiceImpl with IdentityHelpers
-  with RoutingUtils with CassandraClientImpl {
+  with RoutingUtils with CassandraClientImpl
+  with RequestMetrics {
+
+  protected def logger: Logger
 
   lazy val routes: Route =
     path("_status") {
+      logger.info("Responding to status request.")
       complete(Status())
     } ~
       pathPrefix("api") {

@@ -3,11 +3,12 @@ package com.virtuslab.auctionHouse.sync.signIn
 import java.util.Date
 
 import com.datastax.driver.mapping.Mapper
+import com.virtuslab.RequestMetrics
 import com.virtuslab.auctionHouse.sync.cassandra.{Account, SessionManager, Token}
 import org.scalatra.ScalatraBase
 import com.virtuslab.auctionHouse.sync.cassandra.SessionManager.ScalaMapper
 
-trait Authentication extends ScalatraBase {
+trait Authentication extends ScalatraBase { this: RequestMetrics =>
 
   lazy val tokensMapper: Mapper[Token] = SessionManager.mapper(classOf[Token])
   lazy val accountsMapper: Mapper[Account] = SessionManager.mapper(classOf[Account])
@@ -16,11 +17,16 @@ trait Authentication extends ScalatraBase {
     "X_HTTP_AUTHORIZATION")
 
   def auth[T](fun: Account => T): T = {
+    val histogramTimer = requestsLatency.labels("authenticate").startTimer()
+
     val account = getToken.flatMap { requestedToken =>
       tokensMapper.getOption(requestedToken)
         .filter(_.expires_at.compareTo(new Date()) > 0)
         .flatMap(t => accountsMapper.getOption(t.username))
     }.getOrElse(halt(status = 401))
+
+    histogramTimer.observeDuration()
+
     fun(account)
   }
 

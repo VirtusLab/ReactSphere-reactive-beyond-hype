@@ -35,12 +35,25 @@ lazy val commonSettings = Seq(
 lazy val commons = (project in file("commons"))
   .settings(
     libraryDependencies ++= Seq(
-      "com.github.t3hnar"      %% "scala-bcrypt"             % "3.1",
-      "com.datastax.cassandra" %  "cassandra-driver-core"    % "3.4.0",
-      "com.datastax.cassandra" %  "cassandra-driver-mapping" % "3.4.0",
-      "com.typesafe"           %  "config"                   % "1.3.2",
-      "org.scalatest"          %% "scalatest"                % "3.0.3"    % Test,
-      "org.cassandraunit"      %  "cassandra-unit"           % "3.3.0.2"  % Test
+      "com.github.t3hnar"          %% "scala-bcrypt"             % "3.1",
+      // cassandra
+      "com.datastax.cassandra"     %  "cassandra-driver-core"    % "3.4.0",
+      "com.datastax.cassandra"     %  "cassandra-driver-mapping" % "3.4.0",
+      // configuration
+      "com.typesafe"               %  "config"                   % "1.3.2",
+      // metrics
+      "io.prometheus"              %  "simpleclient"             % "0.3.0",
+      "io.prometheus"              %  "simpleclient_hotspot"     % "0.3.0",
+      "io.prometheus"              %  "simpleclient_httpserver"  % "0.3.0",
+      "io.prometheus"              %  "simpleclient_logback"     % "0.3.0",
+      // logging
+      "org.slf4j"                  %  "slf4j-api"                % "1.7.22",
+      "ch.qos.logback"             %  "logback-classic"          % "1.2.3",
+      "com.typesafe.scala-logging" %% "scala-logging"            % "3.5.0",
+      // testing
+      "org.scalatest"              %% "scalatest"                % "3.0.3"    % Test,
+      "org.cassandraunit"          %  "cassandra-unit"           % "3.3.0.2"  % Test,
+      "log4j"                      %  "log4j"                    % "1.2.17"   % Test
     )
   )
 
@@ -53,7 +66,6 @@ lazy val helloWorldSync = (project in file("hello-world-sync"))
       "org.scalatra"      %% "scalatra"           % ScalatraVersion,
       "org.scalatra"      %% "scalatra-scalatest" % ScalatraVersion   % "test",
       "org.scalatra"      %% "scalatra-json"      % ScalatraVersion,
-      "ch.qos.logback"    %  "logback-classic"    % "1.2.3"           % "runtime",
       "org.eclipse.jetty" %  "jetty-webapp"       % "9.4.8.v20171121" % "container;compile",
       "org.eclipse.jetty" %  "jetty-plus"         % "9.4.8.v20171121" % "container;compile",
       "javax.servlet"     %  "javax.servlet-api"  % "3.1.0"           % "provided",
@@ -73,7 +85,6 @@ lazy val auctionHousePrimarySync = (project in file("auction-house-primary-sync"
       "org.scalatra"      %% "scalatra"           % ScalatraVersion,
       "org.scalatra"      %% "scalatra-scalatest" % ScalatraVersion   % "test",
       "org.scalatra"      %% "scalatra-json"      % ScalatraVersion,
-      "ch.qos.logback"    %  "logback-classic"    % "1.2.3"           % "runtime",
       "org.eclipse.jetty" %  "jetty-webapp"       % "9.4.8.v20171121" % "container;compile",
       "org.eclipse.jetty" %  "jetty-plus"         % "9.4.8.v20171121" % "container;compile",
       "javax.servlet"     %  "javax.servlet-api"  % "3.1.0"           % "provided",
@@ -94,11 +105,6 @@ lazy val auctionHousePrimaryAsync = (project in file("auction-house-primary-asyn
       "com.typesafe.akka"          %% "akka-http"             % AkkaHttpVersion,
       "com.typesafe.akka"          %% "akka-http-spray-json"  % AkkaHttpVersion,
       "com.typesafe.akka"          %% "akka-stream"           % AkkaVersion,
-
-      "org.slf4j"                  %  "slf4j-api"             % "1.7.22",
-      "ch.qos.logback"             %  "logback-classic"       % "1.1.7",
-      "com.typesafe.scala-logging" %% "scala-logging"         % "3.5.0",
-
       "com.typesafe.akka"          %% "akka-http-testkit"     % AkkaHttpVersion   % Test,
       "com.typesafe.akka"          %% "akka-testkit"          % AkkaVersion       % Test,
       "com.typesafe.akka"          %% "akka-stream-testkit"   % AkkaVersion       % Test
@@ -116,11 +122,6 @@ lazy val helloWorldAsync = (project in file("hello-world-async"))
       "com.typesafe.akka"          %% "akka-http"            % AkkaHttpVersion,
       "com.typesafe.akka"          %% "akka-http-spray-json" % AkkaHttpVersion,
       "com.typesafe.akka"          %% "akka-stream"          % AkkaVersion,
-
-      "org.slf4j"                  %  "slf4j-api"            % "1.7.22",
-      "ch.qos.logback"             %  "logback-classic"      % "1.1.7",
-      "com.typesafe.scala-logging" %% "scala-logging"        % "3.5.0",
-
       "com.typesafe.akka"          %% "akka-http-testkit"    % AkkaHttpVersion   % Test,
       "com.typesafe.akka"          %% "akka-testkit"         % AkkaVersion       % Test,
       "com.typesafe.akka"          %% "akka-stream-testkit"  % AkkaVersion       % Test
@@ -135,7 +136,6 @@ lazy val gatlingTests = (project in file("gatling-tests"))
     commonSettings,
     name := "gatling-tests",
     libraryDependencies ++= Seq(
-      "ch.qos.logback"             %  "logback-classic"           % "1.1.7",
       "io.gatling.highcharts"      %  "gatling-charts-highcharts" % "2.3.0",
       "io.gatling"                 %  "gatling-test-framework"    % "2.3.0",
       "org.json4s"                 %% "json4s-jackson"            % "3.6.0-M2",

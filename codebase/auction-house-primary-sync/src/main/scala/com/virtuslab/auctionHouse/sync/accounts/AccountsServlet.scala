@@ -13,10 +13,28 @@ class AccountsServlet extends BaseServlet {
   lazy val accountService = new AccountService()
 
   post("/") {
+    val traceId = getTraceId
+    val histogramTimer = requestsLatency.labels("createAccountRequest").startTimer()
     val accountRequest = parsedBody.extract[CreateAccountRequest]
-    Try(accountService.createAccount(accountRequest))
-      .map(_ => Created())
-      .recover { case e: DuplicatedEntityException  => BadRequest(ErrorResponse(e.getMessage)) }
-      .get
+
+    logger.info(s"[${traceId.id}] Received account creation request for user '${accountRequest.username}' ...")
+
+    val attempt = Try(accountService.createAccount(accountRequest))
+      .map(_ => {
+        logger.info(s"[${traceId.id}] Account for '${accountRequest.username}' created.")
+        Created()
+      })
+      .recover { case e: DuplicatedEntityException =>
+        logger.warn(s"[${traceId.id}] Account for '${accountRequest.username}' already exists.")
+        BadRequest(ErrorResponse(e.getMessage))
+      }
+
+    if (attempt.isFailure) {
+      logger.error(s"[${traceId.id}] Error occured while creating account for user '${accountRequest.username}':", attempt.failed.get)
+    }
+
+    histogramTimer.observeDuration()
+
+    attempt.get
   }
 }

@@ -3,6 +3,7 @@ package com.virtuslab.auctionhouse.primaryasync
 import java.util.concurrent.atomic.AtomicReference
 import java.util.{Date, UUID}
 
+import com.virtuslab.TraceId
 import spray.json.JsObject
 
 import scala.concurrent.Future
@@ -27,7 +28,7 @@ trait TestAuctionServiceImpl extends AuctionService {
     auctions = auctions + (id -> AuctionResponse(category, id, time, owner, title, "", BigDecimal(0d), JsObject(), bids))
   }
 
-  def createAuction(command: CreateAuction): Future[String] = {
+  def createAuction(command: CreateAuction)(implicit traceId: TraceId): Future[String] = {
     val auctionId = currentAuctionId.get()
     val auction = AuctionResponse(
       category = command.category,
@@ -47,7 +48,7 @@ trait TestAuctionServiceImpl extends AuctionService {
     successful(auctionId)
   }
 
-  def listAuctions(category: String): Future[List[AuctionInfo]] = successful {
+  def listAuctions(category: String)(implicit traceId: TraceId): Future[List[AuctionInfo]] = successful {
     auctions.values.toList
       .filter(_.category == category)
       .map {
@@ -55,10 +56,10 @@ trait TestAuctionServiceImpl extends AuctionService {
       }
   }
 
-  def getAuction(auctionId: String): Future[AuctionResponse] = (auctions get auctionId)
+  def getAuction(auctionId: String)(implicit traceId: TraceId): Future[AuctionResponse] = (auctions get auctionId)
     .fold(failed[AuctionResponse](AuctionNotFound(auctionId)))(successful)
 
-  def bidInAuction(command: BidInAuction): Future[Unit] = {
+  def bidInAuction(command: BidInAuction)(implicit traceId: TraceId): Future[Unit] = {
     val auctionId = command.auctionId
     auctions get auctionId match {
       case Some(auction) =>

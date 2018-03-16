@@ -1,5 +1,6 @@
 package com.virtuslab.auctionhouse.primaryasync
 
+import com.virtuslab.TraceId
 import com.virtuslab.identity.{CreateAccountRequest, SignInRequest, User}
 
 import scala.concurrent.Future
@@ -19,7 +20,7 @@ trait TestIdentityServiceImpl extends IdentityService {
     userMap = Map.empty
   }
 
-  def createUser(request: CreateAccountRequest): Future[Unit] = {
+  def createUser(request: CreateAccountRequest)(implicit traceId: TraceId): Future[Unit] = {
     if (userMap contains request.username) failed(DuplicateUser(request.username))
     else {
       val user = request.createUser
@@ -28,7 +29,7 @@ trait TestIdentityServiceImpl extends IdentityService {
     }
   }
 
-  def signIn(request: SignInRequest): Future[String] =
+  def signIn(request: SignInRequest)(implicit traceId: TraceId): Future[String] =
     userMap.get(request.username)
       .map { user => user.validatePassword(request.password) }
       .flatMap { passwordCorrect => if (passwordCorrect) Some(CorrectTestToken) else None }

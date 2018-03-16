@@ -11,6 +11,7 @@ class StatusServlet extends BaseServlet {
   }
 
   get("/_status") {
+    logger.info("Responding to status request.")
     Status()
   }
 }

@@ -1,18 +1,24 @@
 package com.virtuslab.auctionhouse.primaryasync
 
+import com.datastax.driver.core.utils.UUIDs
+import com.typesafe.scalalogging.Logger
+import com.virtuslab.TraceId
 import com.virtuslab.auctionhouse.cassandra.CassandraIntegrationTest
 import com.virtuslab.identity.{CreateAccountRequest, SignInRequest}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{GivenWhenThen, Matchers, OptionValues, WordSpec}
 
-import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext}
 
 class IdentityServiceIntegrationTest extends WordSpec with Matchers with ScalaFutures with GivenWhenThen
   with OptionValues with CassandraIntegrationTest with IdentityServiceImpl {
 
   implicit val executionContext: ExecutionContext = global
+  implicit val traceId: TraceId = TraceId(UUIDs.random().toString)
+
+  override def logger: Logger = Logger(getClass)
 
   "Identity service" should {
 
