@@ -1,22 +1,19 @@
-import ammonite.ops.ImplicitWd.implicitCwd
-import ammonite.ops._
-import $file.tectonic
+import $file.build
+import $file.deployments
 import $file.display
-import $file.stack
-import stack._
-import tectonic._
+import $file.tectonic
+import $file.vars
+import build._
+import deployments.deployAll
 import display.ProgressBar
-
-val projects = Seq(
-  "hello-world"
-)
-
-val suffix = "sync"
+import tectonic._
 
 implicit val progressBar = ProgressBar(System.out, "", "Preparing...")
 progressBar.start()
 
-buildStack(projects, suffix)
+val projects = vars.apps map { _ + "-sync" }
+
+buildStack(projects)
 
 progressBar stepInto "Kubectl"
 progressBar show "Verifying kubectl config..."
@@ -24,7 +21,7 @@ progressBar show "Verifying kubectl config..."
 verifyKubectlConfiguration
 
 progressBar show "Deploying..."
-%kubectl("apply", "-f", "infra/manifests/hello-world-sync.dev.yaml") // TODO [ENVIRONMENTS]
+deployAll(projects)
 
 progressBar.finishedNamespace()
 progressBar.finished()

@@ -94,3 +94,28 @@ def verifyKubectlConfiguration(implicit progressBar: ProgressBar): Unit = {
     interp exit 1
   }
 }
+
+def getPodCountInNamespace(namespace: String, label: String, selector: String): Int = {
+  implicit val wd: Path = pwd
+
+  val pods = %%kubectl(
+    "-n", namespace,
+    "get", "pods",
+    s"--selector=$label=$selector",
+  )
+
+  pods.out.string.split("\n").length - 1 // minus first row which is either 'No resources found.' or column labels
+}
+
+def getPodNamesInNamespace(namespace: String, label: String, selector: String): Seq[String] = {
+  implicit val wd: Path = pwd
+
+  val pods = %%kubectl(
+    "-n", namespace,
+    "get", "pods",
+    s"--selector=$label=$selector",
+    "-o", "jsonpath='{.items[*].metadata.name}'"
+  )
+
+  pods.out.string.stripPrefix("'").stripSuffix("'").split(" ")
+}
