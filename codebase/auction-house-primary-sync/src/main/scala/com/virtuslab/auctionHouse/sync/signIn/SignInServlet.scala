@@ -5,14 +5,16 @@ import java.time.temporal.ChronoUnit
 import java.util.{Date, UUID}
 
 import com.datastax.driver.mapping.Mapper
-import com.virtuslab.auctionHouse.sync.BaseServlet
 import com.virtuslab.auctionHouse.sync.cassandra.SessionManager.ScalaMapper
 import com.virtuslab.auctionHouse.sync.cassandra.{Account, SessionManager, Token}
+import com.virtuslab.base.sync.BaseServlet
 import com.virtuslab.identity.{SignInRequest, TokenResponse}
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra._
 
 class SignInServlet extends BaseServlet {
+
+  override def servletName: String = "SignIn"
 
   override protected implicit def jsonFormats: Formats = DefaultFormats
 
