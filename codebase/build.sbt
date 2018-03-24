@@ -186,7 +186,7 @@ lazy val gatlingTests = (project in file("gatling-tests"))
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin, GitVersioning, GatlingPlugin)
   .disablePlugins(CoverallsPlugin)
-  .dependsOn(commons % "test->test;compile->compile")
+  .dependsOn(commons % compileTestScope)
 
 lazy val root = (project in file("."))
   .settings(

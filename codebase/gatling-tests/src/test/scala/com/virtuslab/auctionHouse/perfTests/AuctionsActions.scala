@@ -101,7 +101,7 @@ object AuctionsActions {
   val auctionsParam = "auctions"
   val selectedAuctionParam = "selectedAuction"
 
-  case class CreateAuctionRequestCreateAuctionRequest(category: String, title: String, description: String, minimumPrice: BigDecimal,
+  case class CreateAuctionRequest(category: String, title: String, description: String, minimumPrice: BigDecimal,
                                   details: JValue)
 
   case class AuctionInfo(auctionId: String, createdAt: Long, owner: String, title: String, minimumPrice: BigDecimal)
