@@ -1,8 +1,8 @@
 package com.virtuslab.auctionHouse.sync.accounts
 
 import com.datastax.driver.mapping.Mapper
-import com.virtuslab.auctionHouse.sync.BaseServletTest
 import com.virtuslab.auctionHouse.sync.cassandra.Account
+import com.virtuslab.base.sync.BaseServletTest
 import org.mockito.Mockito._
 
 

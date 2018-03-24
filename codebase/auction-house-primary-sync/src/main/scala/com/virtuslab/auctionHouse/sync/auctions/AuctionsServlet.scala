@@ -2,10 +2,10 @@ package com.virtuslab.auctionHouse.sync.auctions
 
 import java.util.UUID
 
-import com.virtuslab.auctionHouse.sync.BaseServlet
 import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.{InvalidBidException, InvalidCategoryException}
 import com.virtuslab.auctionHouse.sync.commons.ServletModels.{BidRequest, CreateAuctionRequest, EntityNotFoundException, ErrorResponse}
 import com.virtuslab.auctionHouse.sync.signIn.Authentication
+import com.virtuslab.base.sync.BaseServlet
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra._
 
@@ -14,6 +14,8 @@ import scala.util.Try
 class AuctionsServlet extends BaseServlet with Authentication {
 
   override protected implicit def jsonFormats: Formats = DefaultFormats
+
+  override def servletName: String = "AuctionHouse"
 
   before() {
     contentType = formats("json")

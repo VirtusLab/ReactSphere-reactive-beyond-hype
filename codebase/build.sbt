@@ -1,15 +1,19 @@
+import org.scoverage.coveralls.Imports.CoverallsKeys._
 import com.typesafe.sbt.packager.docker.Cmd
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUpdateLatest
+import sbt.Keys.resolvers
 
-lazy val installBashCommands = Seq(
+val installBashCommands = Seq(
   Cmd("USER", "root"),
   Cmd("RUN", "apk", "add", "--update", "bash", "&&", "rm", "-rf", "/var/cache/apk/*"),
   Cmd("USER", "daemon")
 )
 
-lazy val ScalatraVersion = "2.6.2"
-lazy val AkkaHttpVersion = "10.0.11"
-lazy val AkkaVersion     = "2.5.8"
+val ScalatraVersion = "2.6.2"
+val AkkaHttpVersion = "10.0.11"
+val AkkaVersion     = "2.5.8"
+
+val compileTestScope = "test->test;compile->compile"
 
 lazy val commonSettings = Seq(
   organization        := "com.virtuslab",
@@ -26,6 +30,11 @@ lazy val commonSettings = Seq(
     "-J-XshowSettings:vm",
     s"-Dservice.version=${version.value}"
   ),
+
+  // enable this when https://github.com/scoverage/sbt-coveralls/pull/110 is merged
+  // and 1.2.3 version released
+  // coverageEnabled := true,
+  // coverallsGitRepoLocation := Some("../"),
 
   fork in Test := true
 )
@@ -55,29 +64,10 @@ lazy val commons = (project in file("commons"))
     )
   )
 
-lazy val helloWorldSync = (project in file("hello-world-sync"))
+lazy val baseSync = (project in file("base-sync"))
   .settings(
     commonSettings,
-    name := "hello-world-sync",
-    resolvers += Classpaths.typesafeReleases,
-    libraryDependencies ++= Seq(
-      "org.scalatra"      %% "scalatra"           % ScalatraVersion,
-      "org.scalatra"      %% "scalatra-scalatest" % ScalatraVersion   % "test",
-      "org.scalatra"      %% "scalatra-json"      % ScalatraVersion,
-      "org.eclipse.jetty" %  "jetty-webapp"       % "9.4.8.v20171121" % "container;compile",
-      "org.eclipse.jetty" %  "jetty-plus"         % "9.4.8.v20171121" % "container;compile",
-      "javax.servlet"     %  "javax.servlet-api"  % "3.1.0"           % "provided",
-      "org.json4s"        %% "json4s-jackson"     % "3.5.2"
-    ),
-    dockerCommands ++= installBashCommands
-  )
-  .enablePlugins(ScalatraPlugin, JavaAppPackaging, DockerPlugin, GitVersioning)
-  .dependsOn(commons % "test->test;compile->compile")
-
-lazy val auctionHousePrimarySync = (project in file("auction-house-primary-sync"))
-  .settings(
-    commonSettings,
-    name := "auction-house-primary-sync",
+    name := "base-sync",
     resolvers += Classpaths.typesafeReleases,
     libraryDependencies ++= Seq(
       "org.scalatra"      %% "scalatra"           % ScalatraVersion,
@@ -93,7 +83,33 @@ lazy val auctionHousePrimarySync = (project in file("auction-house-primary-sync"
     dockerCommands ++= installBashCommands
   )
   .enablePlugins(ScalatraPlugin, JavaAppPackaging, DockerPlugin, GitVersioning)
-  .dependsOn(commons % "test->test;compile->compile")
+  .dependsOn(commons % compileTestScope)
+
+lazy val helloWorldSync = (project in file("hello-world-sync"))
+  .settings(
+    commonSettings,
+    name := "hello-world-sync",
+    resolvers += Classpaths.typesafeReleases,
+    dockerCommands ++= installBashCommands
+  )
+  .enablePlugins(ScalatraPlugin, JavaAppPackaging, DockerPlugin, GitVersioning)
+  .dependsOn(
+    commons % compileTestScope,
+    baseSync % compileTestScope
+  )
+
+lazy val auctionHousePrimarySync = (project in file("auction-house-primary-sync"))
+  .settings(
+    commonSettings,
+    name := "auction-house-primary-sync",
+    resolvers += Classpaths.typesafeReleases,
+    dockerCommands ++= installBashCommands
+  )
+  .enablePlugins(ScalatraPlugin, JavaAppPackaging, DockerPlugin, GitVersioning)
+  .dependsOn(
+    commons % compileTestScope,
+    baseSync % compileTestScope
+  )
 
 lazy val auctionHousePrimaryAsync = (project in file("auction-house-primary-async"))
   .settings(
@@ -129,6 +145,32 @@ lazy val helloWorldAsync = (project in file("hello-world-async"))
   .enablePlugins(JavaAppPackaging, DockerPlugin, GitVersioning)
   .dependsOn(commons % "test->test;compile->compile")
 
+lazy val billingServiceSecondarySync = (project in file("billing-service-secondary-sync"))
+    .settings(
+      commonSettings,
+      name := "billing-service-secondary-sync",
+      resolvers += Classpaths.typesafeReleases,
+      dockerCommands ++= installBashCommands
+    )
+    .enablePlugins(ScalatraPlugin, JavaAppPackaging, DockerPlugin, GitVersioning)
+  .dependsOn(
+    commons % compileTestScope,
+    baseSync % compileTestScope
+  )
+
+lazy val paymentSystem = (project in file("payment-system"))
+  .settings(
+    commonSettings,
+    name := "payment-system",
+    resolvers += Classpaths.typesafeReleases,
+    dockerCommands ++= installBashCommands
+  )
+  .enablePlugins(ScalatraPlugin, JavaAppPackaging, DockerPlugin, GitVersioning)
+  .dependsOn(
+    commons % compileTestScope,
+    baseSync % compileTestScope
+  )
+
 lazy val gatlingTests = (project in file("gatling-tests"))
   .settings(
     commonSettings,
@@ -146,11 +188,19 @@ lazy val gatlingTests = (project in file("gatling-tests"))
     mainClass := Some("com.virtuslab.auctionHouse.perfTests.Runner")
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin, GitVersioning, GatlingPlugin)
-  .dependsOn(commons % "test->test;compile->compile")
+  .disablePlugins(CoverallsPlugin)
+  .dependsOn(commons % compileTestScope)
 
 lazy val root = (project in file("."))
   .settings(
     commonSettings,
     name := "beyond-the-hype-codebase",
   )
-  .aggregate(helloWorldSync, helloWorldAsync, auctionHousePrimarySync, auctionHousePrimaryAsync, gatlingTests)
+  .aggregate(
+    helloWorldSync, helloWorldAsync,
+    baseSync,
+    auctionHousePrimarySync, auctionHousePrimaryAsync,
+    billingServiceSecondarySync,
+    paymentSystem,
+    gatlingTests
+  )
