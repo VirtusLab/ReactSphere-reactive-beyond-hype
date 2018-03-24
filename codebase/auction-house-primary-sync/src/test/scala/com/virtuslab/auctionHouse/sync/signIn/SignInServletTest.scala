@@ -1,8 +1,8 @@
 package com.virtuslab.auctionHouse.sync.signIn
 
 import com.datastax.driver.mapping.Mapper
-import com.virtuslab.auctionHouse.sync.BaseServletTest
 import com.virtuslab.auctionHouse.sync.cassandra.{Account, Token}
+import com.virtuslab.base.sync.BaseServletTest
 import com.virtuslab.identity.TokenResponse
 import org.mockito.Mockito.{mock, when}
 import org.json4s._

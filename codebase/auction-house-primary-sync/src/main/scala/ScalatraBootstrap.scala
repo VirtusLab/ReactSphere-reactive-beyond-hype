@@ -1,9 +1,10 @@
 
-import com.virtuslab.auctionHouse.sync.StatusServlet
 import com.virtuslab.auctionHouse.sync.accounts.AccountsServlet
 import com.virtuslab.auctionHouse.sync.auctions.AuctionsServlet
 import com.virtuslab.auctionHouse.sync.signIn.SignInServlet
 import javax.servlet.ServletContext
+
+import com.virtuslab.base.sync.StatusServlet
 import org.scalatra._
 
 class ScalatraBootstrap extends LifeCycle {

@@ -1,6 +1,8 @@
-package com.virtuslab.auctionHouse.sync
+package com.virtuslab.base.sync
 
 class StatusServlet extends BaseServlet {
+
+  override def servletName: String = "StatusHouse"
 
   private lazy val version = System.getProperty("service.version", "unknown")
 

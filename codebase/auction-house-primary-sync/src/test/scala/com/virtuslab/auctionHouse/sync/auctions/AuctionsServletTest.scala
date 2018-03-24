@@ -4,12 +4,12 @@ import java.util.UUID
 
 import com.datastax.driver.core.{ResultSet, Session, Statement}
 import com.datastax.driver.mapping.{Mapper, Result}
-import com.virtuslab.auctionHouse.sync.BaseServletTest
 import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.InvalidBidException
 import com.virtuslab.auctionHouse.sync.cassandra._
 import com.virtuslab.auctionHouse.sync.commons.ServletModels
 import com.virtuslab.auctionHouse.sync.commons.ServletModels.{AuctionViewResponse, Auctions, CreateAuctionRequest}
 import com.virtuslab.auctions.Categories
+import com.virtuslab.base.sync.BaseServletTest
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import org.mockito.ArgumentMatchers

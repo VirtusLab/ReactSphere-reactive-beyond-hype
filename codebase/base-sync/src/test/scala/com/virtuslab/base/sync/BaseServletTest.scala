@@ -1,4 +1,4 @@
-package com.virtuslab.auctionHouse.sync
+package com.virtuslab.base.sync
 
 import javax.servlet.http.HttpServlet
 
