@@ -1,0 +1,3 @@
+package com.virtuslab.auctionHouse.perfTests
+
+class TestAuctionHouseSimulation extends AuctionHouseSimulation

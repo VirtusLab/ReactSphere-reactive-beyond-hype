@@ -180,9 +180,12 @@ lazy val gatlingTests = (project in file("gatling-tests"))
       "io.gatling"                 %  "gatling-test-framework"    % "2.3.0",
       "org.json4s"                 %% "json4s-jackson"            % "3.6.0-M2",
       "org.json4s"                 %% "json4s-native"             % "3.6.0-M2",
-      "com.typesafe"               %  "config"                    % "1.3.2"
+      "com.typesafe"               %  "config"                    % "1.3.2",
+      "org.apache.commons"         %  "commons-lang3"             % "3.7",
+      "com.amazonaws"              %  "aws-java-sdk-s3"           % "1.11.301"
     ),
-    dockerCommands ++= installBashCommands
+    dockerCommands ++= installBashCommands,
+    mainClass := Some("com.virtuslab.auctionHouse.perfTests.Runner")
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin, GitVersioning, GatlingPlugin)
   .disablePlugins(CoverallsPlugin)
