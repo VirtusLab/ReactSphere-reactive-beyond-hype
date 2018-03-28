@@ -5,8 +5,7 @@ import java.util.UUID
 import com.virtuslab.TraceId
 import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.{InvalidBidException, InvalidCategoryException}
 import com.virtuslab.auctionHouse.sync.commons.ServletModels.{BidRequest, CreateAuctionRequest, EntityNotFoundException, ErrorResponse}
-import com.virtuslab.auctionHouse.sync.signIn.Authentication
-import com.virtuslab.base.sync.BaseServlet
+import com.virtuslab.base.sync.{Authentication, BaseServlet}
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra._
 

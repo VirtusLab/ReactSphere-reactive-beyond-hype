@@ -1,9 +1,7 @@
-package com.virtuslab.auctionHouse.sync.signIn
+package com.virtuslab.base.sync
 
-import com.virtuslab.auctionHouse.sync.cassandra.Account
 import com.virtuslab.identity.{TokenValidationResponse, ValidateTokenRequest}
 import com.virtuslab.{Config, RequestMetrics, TraceId}
-import org.json4s.{DefaultFormats, Formats}
 import org.json4s.jackson.Serialization.{read, write}
 import org.scalatra.ScalatraBase
 import scalaj.http._
