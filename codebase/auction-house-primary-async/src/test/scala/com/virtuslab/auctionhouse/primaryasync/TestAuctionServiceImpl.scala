@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.{Date, UUID}
 
 import com.virtuslab.TraceId
+import com.virtuslab.base.async.IdentityHelpers
 import spray.json.JsObject
 
 import scala.concurrent.Future

@@ -78,6 +78,7 @@ lazy val baseSync = (project in file("base-sync"))
       "javax.servlet"     %  "javax.servlet-api"  % "3.1.0"           % "provided",
       "org.json4s"        %% "json4s-jackson"     % "3.5.2",
       "com.typesafe"      %  "config"             % "1.3.2",
+      "org.scalaj"        %% "scalaj-http"        % "2.3.0",
       "org.mockito"       %  "mockito-core"       % "2.15.0"          % Test
     ),
     dockerCommands ++= installBashCommands
@@ -85,18 +86,22 @@ lazy val baseSync = (project in file("base-sync"))
   .enablePlugins(ScalatraPlugin, JavaAppPackaging, DockerPlugin, GitVersioning)
   .dependsOn(commons % compileTestScope)
 
-lazy val helloWorldSync = (project in file("hello-world-sync"))
+lazy val baseAsync = (project in file("base-async"))
   .settings(
     commonSettings,
-    name := "hello-world-sync",
-    resolvers += Classpaths.typesafeReleases,
+    name := "base-async",
+    libraryDependencies ++= Seq(
+      "com.typesafe.akka"          %% "akka-http"             % AkkaHttpVersion,
+      "com.typesafe.akka"          %% "akka-http-spray-json"  % AkkaHttpVersion,
+      "com.typesafe.akka"          %% "akka-stream"           % AkkaVersion,
+      "com.typesafe.akka"          %% "akka-http-testkit"     % AkkaHttpVersion   % Test,
+      "com.typesafe.akka"          %% "akka-testkit"          % AkkaVersion       % Test,
+      "com.typesafe.akka"          %% "akka-stream-testkit"   % AkkaVersion       % Test
+    ),
     dockerCommands ++= installBashCommands
   )
-  .enablePlugins(ScalatraPlugin, JavaAppPackaging, DockerPlugin, GitVersioning)
-  .dependsOn(
-    commons % compileTestScope,
-    baseSync % compileTestScope
-  )
+  .enablePlugins(JavaAppPackaging, DockerPlugin, GitVersioning)
+  .dependsOn(commons % compileTestScope)
 
 lazy val auctionHousePrimarySync = (project in file("auction-house-primary-sync"))
   .settings(
@@ -115,35 +120,63 @@ lazy val auctionHousePrimaryAsync = (project in file("auction-house-primary-asyn
   .settings(
     commonSettings,
     name := "auction-house-primary-async",
-    libraryDependencies ++= Seq(
-      "com.typesafe.akka"          %% "akka-http"             % AkkaHttpVersion,
-      "com.typesafe.akka"          %% "akka-http-spray-json"  % AkkaHttpVersion,
-      "com.typesafe.akka"          %% "akka-stream"           % AkkaVersion,
-      "com.typesafe.akka"          %% "akka-http-testkit"     % AkkaHttpVersion   % Test,
-      "com.typesafe.akka"          %% "akka-testkit"          % AkkaVersion       % Test,
-      "com.typesafe.akka"          %% "akka-stream-testkit"   % AkkaVersion       % Test
-    ),
     dockerCommands ++= installBashCommands
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin, GitVersioning)
-  .dependsOn(commons %"test->test;compile->compile")
+  .dependsOn(
+    baseAsync % compileTestScope,
+    commons % compileTestScope
+  )
+
+lazy val identityServiceTertiaryAsync = (project in file("identity-service-tertiary-async"))
+  .settings(
+    commonSettings,
+    name := "identity-service-tertiary-async",
+    dockerCommands ++= installBashCommands
+  )
+  .enablePlugins(JavaAppPackaging, DockerPlugin, GitVersioning)
+  .dependsOn(
+    baseAsync % compileTestScope,
+    commons % compileTestScope
+  )
+
+lazy val identityServiceTertiarySync = (project in file("identity-service-tertiary-sync"))
+  .settings(
+    commonSettings,
+    name := "identity-service-tertiary-sync",
+    resolvers += Classpaths.typesafeReleases,
+    dockerCommands ++= installBashCommands
+  )
+  .enablePlugins(ScalatraPlugin, JavaAppPackaging, DockerPlugin, GitVersioning)
+  .dependsOn(
+    commons % compileTestScope,
+    baseSync % compileTestScope
+  )
+
+lazy val helloWorldSync = (project in file("hello-world-sync"))
+  .settings(
+    commonSettings,
+    name := "hello-world-sync",
+    resolvers += Classpaths.typesafeReleases,
+    dockerCommands ++= installBashCommands
+  )
+  .enablePlugins(ScalatraPlugin, JavaAppPackaging, DockerPlugin, GitVersioning)
+  .dependsOn(
+    commons % compileTestScope,
+    baseSync % compileTestScope
+  )
 
 lazy val helloWorldAsync = (project in file("hello-world-async"))
   .settings(
     commonSettings,
     name := "hello-world-async",
-    libraryDependencies ++= Seq(
-      "com.typesafe.akka"          %% "akka-http"            % AkkaHttpVersion,
-      "com.typesafe.akka"          %% "akka-http-spray-json" % AkkaHttpVersion,
-      "com.typesafe.akka"          %% "akka-stream"          % AkkaVersion,
-      "com.typesafe.akka"          %% "akka-http-testkit"    % AkkaHttpVersion   % Test,
-      "com.typesafe.akka"          %% "akka-testkit"         % AkkaVersion       % Test,
-      "com.typesafe.akka"          %% "akka-stream-testkit"  % AkkaVersion       % Test
-    ),
     dockerCommands ++= installBashCommands
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin, GitVersioning)
-  .dependsOn(commons % "test->test;compile->compile")
+  .dependsOn(
+    baseAsync % compileTestScope,
+    commons % compileTestScope
+  )
 
 lazy val billingServiceSecondarySync = (project in file("billing-service-secondary-sync"))
     .settings(
@@ -198,7 +231,7 @@ lazy val root = (project in file("."))
   )
   .aggregate(
     helloWorldSync, helloWorldAsync,
-    baseSync,
+    baseSync, baseAsync,
     auctionHousePrimarySync, auctionHousePrimaryAsync,
     billingServiceSecondarySync,
     paymentSystem,

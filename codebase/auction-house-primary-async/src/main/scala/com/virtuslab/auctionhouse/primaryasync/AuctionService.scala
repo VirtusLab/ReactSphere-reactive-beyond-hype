@@ -64,7 +64,7 @@ trait AuctionService {
 }
 
 trait AuctionServiceImpl extends AuctionService {
-  this: IdentityHelpers with CassandraClient =>
+  this: CassandraClient =>
 
   import com.virtuslab.AsyncUtils.Implicits._
 

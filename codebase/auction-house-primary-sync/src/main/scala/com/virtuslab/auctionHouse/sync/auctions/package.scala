@@ -12,4 +12,6 @@ package object auctions {
     def apply(auction: Auction): AuctionListRow = AuctionListRow(auction.auction_id, auction.title, auction.description)
   }
 
+  case class CreatedAuction(auctionId: String)
+
 }

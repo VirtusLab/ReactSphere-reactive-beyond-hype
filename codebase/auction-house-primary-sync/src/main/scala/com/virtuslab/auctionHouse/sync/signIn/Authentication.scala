@@ -1,33 +1,50 @@
 package com.virtuslab.auctionHouse.sync.signIn
 
-import java.util.Date
-
-import com.datastax.driver.mapping.Mapper
-import com.virtuslab.RequestMetrics
-import com.virtuslab.auctionHouse.sync.cassandra.{Account, SessionManager, Token}
+import com.virtuslab.auctionHouse.sync.cassandra.Account
+import com.virtuslab.identity.{TokenValidationResponse, ValidateTokenRequest}
+import com.virtuslab.{Config, RequestMetrics, TraceId}
+import org.json4s.{DefaultFormats, Formats}
+import org.json4s.jackson.Serialization.{read, write}
 import org.scalatra.ScalatraBase
-import com.virtuslab.auctionHouse.sync.cassandra.SessionManager.ScalaMapper
+import scalaj.http._
 
 trait Authentication extends ScalatraBase { this: RequestMetrics =>
 
-  lazy val tokensMapper: Mapper[Token] = SessionManager.mapper(classOf[Token])
-  lazy val accountsMapper: Mapper[Account] = SessionManager.mapper(classOf[Account])
+  import org.json4s._
 
-  private val AUTHORIZATION_KEYS = Seq("Authorization", "HTTP_AUTHORIZATION", "X-HTTP_AUTHORIZATION",
-    "X_HTTP_AUTHORIZATION")
+  private val AUTHORIZATION_KEYS = Seq(
+    "Authorization",
+    "HTTP_AUTHORIZATION",
+    "X-HTTP_AUTHORIZATION",
+    "X_HTTP_AUTHORIZATION"
+  )
 
-  def auth[T](fun: Account => T): T = {
+  private val identityUrl = s"http://${Config.identityServiceContactPoint}/api/v1/validate"
+
+  protected implicit val jsonFormats: Formats = DefaultFormats
+
+  def auth[T](fun: String => T)(implicit traceId: TraceId): T = {
     val histogramTimer = requestsLatency.labels("authenticate").startTimer()
 
-    val account = getToken.flatMap { requestedToken =>
-      tokensMapper.getOption(requestedToken)
-        .filter(_.expires_at.compareTo(new Date()) > 0)
-        .flatMap(t => accountsMapper.getOption(t.username))
-    }.getOrElse(halt(status = 401))
+    val maybeUsername = getToken.flatMap { requestedToken =>
+      val body = write(ValidateTokenRequest(requestedToken))
+      val response = Http(identityUrl)
+        .headers(("X-Trace-Id", traceId.id) :: ("Content-Type", "application/json") :: Nil)
+        .postData(body)
+        .asString
+
+      if (response.code == 200) {
+        Some(read[TokenValidationResponse](response.body).username)
+      } else {
+        None
+      }
+    }
 
     histogramTimer.observeDuration()
 
-    fun(account)
+    val username = maybeUsername getOrElse halt(status = 401)
+
+    fun(username)
   }
 
   private def getToken: Option[String] = {

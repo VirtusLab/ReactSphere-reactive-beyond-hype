@@ -1,38 +1,24 @@
 package com.virtuslab.auctionhouse.primaryasync
 
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import com.typesafe.scalalogging.Logger
-import com.virtuslab.RequestMetrics
+import com.virtuslab.{RequestMetrics, TraceIdSupport}
+import com.virtuslab.base.async.{BaseRoutes, IdentityHelpers, RoutingUtils}
 import com.virtuslab.cassandra.CassandraClientImpl
-import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
-trait Routes extends SprayJsonSupport with DefaultJsonProtocol
-  with IdentityRoutes with IdentityServiceImpl
+trait Routes extends BaseRoutes
   with AuctionRoutes with AuctionServiceImpl with IdentityHelpers
   with RoutingUtils with CassandraClientImpl
-  with RequestMetrics {
+  with RequestMetrics with TraceIdSupport {
 
   protected def logger: Logger
 
-  lazy val routes: Route =
-    path("_status") {
-      logger.info("Responding to status request.")
-      complete(Status())
-    } ~
-      pathPrefix("api") {
-        pathPrefix("v1") {
-          identityRoutes ~
-            auctionRoutes
-        }
+  def serviceRoutes: Route =
+    pathPrefix("api") {
+      pathPrefix("v1") {
+          auctionRoutes
       }
-
-  private lazy val version = System.getProperty("service.version", "unknown")
-
-  implicit lazy val statusFormat: RootJsonFormat[Status] = jsonFormat1(Status)
-
-  case class Status(version: String = version)
+    }
 
 }

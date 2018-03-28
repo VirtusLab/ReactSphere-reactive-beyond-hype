@@ -13,11 +13,10 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
 
 class AuctionServiceIntegrationTest extends WordSpec with Matchers with ScalaFutures with GivenWhenThen
-  with OptionValues with CassandraIntegrationTest with AuctionServiceImpl
-  with IdentityHelpers with TestIdentityServiceImpl {
+  with OptionValues with CassandraIntegrationTest with AuctionServiceImpl {
 
   implicit val executionContext: ExecutionContext = Implicits.global
-  implicit val traceId: TraceId = new TraceId(UUIDs.random().toString)
+  implicit val traceId: TraceId = TraceId(UUIDs.random().toString)
   override protected def logger: Logger = Logger(getClass)
 
   "Auction service" should {
