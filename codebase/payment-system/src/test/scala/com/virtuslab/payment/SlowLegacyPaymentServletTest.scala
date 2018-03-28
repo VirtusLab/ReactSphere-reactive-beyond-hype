@@ -15,7 +15,6 @@ class SlowLegacyPaymentServletTest extends BaseServletTest(classOf[TestablePayme
     "acknowledge transaction" when {
       "correct format sent" in {
         val body = write(PaymentRequest("testUser", "payerUser", 15000))
-        println(body)
         post(s"/payment", body.getBytes, jsonHeader) {
           status should equal(Ok().status)
         }

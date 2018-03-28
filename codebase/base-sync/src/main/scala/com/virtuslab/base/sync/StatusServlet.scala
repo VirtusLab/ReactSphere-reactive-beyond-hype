@@ -2,7 +2,7 @@ package com.virtuslab.base.sync
 
 class StatusServlet extends BaseServlet {
 
-  override def servletName: String = "StatusHouse"
+  override def servletName: String = "Status"
 
   private lazy val version = System.getProperty("service.version", "unknown")
 

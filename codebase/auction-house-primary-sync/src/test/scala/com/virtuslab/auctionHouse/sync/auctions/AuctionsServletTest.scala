@@ -4,6 +4,7 @@ import java.util.UUID
 
 import com.datastax.driver.core.{ResultSet, Session, Statement}
 import com.datastax.driver.mapping.{Mapper, Result}
+import com.virtuslab.TraceId
 import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.InvalidBidException
 import com.virtuslab.auctionHouse.sync.cassandra._
 import com.virtuslab.auctionHouse.sync.commons.ServletModels
@@ -71,7 +72,7 @@ class AuctionsServletTest extends BaseServletTest(classOf[TestableAuctionsServle
           s"""{ "category": "c1", "title": "t1", "description": "d1", "minimumPrice": 1,
              | "details": {"some": "details"} }""".stripMargin, jsonHeader) {
           status should equal(Created().status)
-          body should equal(TestableAuctionsServlet.auctionUuid.toString)
+          body should equal(s"""{"auctionId":"${TestableAuctionsServlet.auctionUuid.toString}"}""")
         }
       }
     }
@@ -115,7 +116,7 @@ class AuctionsServletTest extends BaseServletTest(classOf[TestableAuctionsServle
 class TestableAuctionsServlet extends AuctionsServlet {
   import scala.collection.JavaConverters._
 
-  override def auth[T](fun: Account => T): T = fun(new Account("u1", "p1"))
+  override def auth[T](fun: String => T)(implicit traceId: TraceId): T = fun("u1")
 
   private val mapperMock = mock(classOf[Mapper[Auction]])
   private val sessionMock = mock(classOf[Session])

@@ -11,8 +11,8 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.datastax.driver.core.utils.UUIDs
 import com.typesafe.scalalogging.Logger
-import com.virtuslab.identity.{CreateAccountRequest, SignInRequest, TokenResponse}
-import com.virtuslab.{RequestMetrics, TraceId}
+import com.virtuslab.base.async.TestIdentityHelpers
+import com.virtuslab.{RequestMetrics, TraceId, TraceIdSupport}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterEach, GivenWhenThen, Matchers, WordSpec}
 
@@ -20,9 +20,8 @@ import scala.concurrent.ExecutionContext
 
 class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures with ScalatestRouteTest
   with GivenWhenThen with BeforeAndAfterEach
-  with IdentityRoutes with TestIdentityServiceImpl
-  with AuctionRoutes with TestAuctionServiceImpl with IdentityHelpers
-  with RequestMetrics {
+  with AuctionRoutes with TestAuctionServiceImpl with TestIdentityHelpers
+  with RequestMetrics with TraceIdSupport {
 
   import com.virtuslab.auctions.Categories
   import spray.json._
@@ -34,76 +33,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
   protected def executionContext: ExecutionContext = system.dispatcher
 
   override def afterEach() = {
-    clearData()
     clearAuctionData()
-  }
-
-  "Identity module" should {
-    val sealedIdentityRoutes = Route.seal(identityRoutes)
-
-    "create accounts" in {
-      When("request to create account is sent to identity api")
-      val body = CreateAccountRequest("testuser", "testpassword").toJson.prettyPrint
-      val request = HttpRequest(uri = "/accounts", method = POST)
-        .withEntity(HttpEntity(`application/json`, body))
-
-      Then("response should have 201 status")
-      request ~> sealedIdentityRoutes ~> check {
-        status should ===(Created)
-      }
-    }
-
-    "return error on duplicate account creation" in {
-      Given("user testuser exists")
-      addUser("testuser", "testpassword")
-
-      When("request to create account with the same username is sent to identity api")
-      val body = CreateAccountRequest("testuser", "testpassword").toJson.prettyPrint
-      val request = HttpRequest(uri = "/accounts", method = POST)
-        .withEntity(HttpEntity(`application/json`, body))
-
-      Then("response should have 400 status and contain an error")
-      request ~> sealedIdentityRoutes ~> check {
-        status should ===(BadRequest)
-        contentType should ===(`application/json`)
-        entityAs[Error] should ===(Error("user 'testuser' already exists"))
-      }
-    }
-
-    "sign in existing users" in {
-      Given("user testuser exists and has password testpassword")
-      addUser("testuser", "testpassword")
-
-      When("request to sign in existing user with correct password is sent to identity api")
-      val body = SignInRequest("testuser", "testpassword").toJson.prettyPrint
-      val request = HttpRequest(uri = "/sign-in", method = POST)
-        .withEntity(HttpEntity(`application/json`, body))
-
-      Then("response should have 200 status containing token")
-      request ~> sealedIdentityRoutes ~> check {
-        status should ===(OK)
-        contentType should ===(`application/json`)
-        entityAs[TokenResponse] should ===(TokenResponse("f60e7614-0d56-4ef5-b6c8-3939d34d5ec2"))
-      }
-    }
-
-    "reject sign in attempts when password is incorrect" in {
-      Given("user testuser exists and has password testpassword")
-      addUser("testuser", "testpassword")
-
-      When("request to sign in existing user with incorrect password is sent to identity api")
-      val invalidPasswordBody = SignInRequest("testuser", "invalid").toJson.prettyPrint
-      val invalidPasswordRequest = HttpRequest(uri = "/sign-in", method = POST)
-        .withEntity(HttpEntity(`application/json`, invalidPasswordBody))
-
-      Then("response should have 401 status and contain an error")
-      invalidPasswordRequest ~> sealedIdentityRoutes ~> check {
-        status should ===(Unauthorized)
-        contentType should ===(`application/json`)
-        entityAs[Error] should ===(Error("wrong password or username"))
-      }
-    }
-
   }
 
   "Auction module" should {
@@ -114,6 +44,7 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
 
     "reject auction creation requests if authentication token is missing" in {
       When("request to create an auction without authentication token is sent to auction api")
+      addValidToken("testuser", "valid-token")
       val body = CreateAuctionRequest(
         category = "test-category",
         title = "test auction",
@@ -123,7 +54,6 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       ).toJson.prettyPrint
       //      val request = HttpRequest(uri = "/auctions", method = POST)
       //        .withEntity(HttpEntity(`application/json`, body))
-      val authHeader = Authorization(OAuth2BearerToken("invalid"))
       val request = HttpRequest(uri = "/auctions", method = POST)
         .withEntity(HttpEntity(`application/json`, body))
 
@@ -157,6 +87,9 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
     }
 
     "create auction when submitted with valid authentication token" in {
+      Given("valid token for user exists")
+      addValidToken("testuser", "valid-token")
+
       When("request to create an auction with valid authentication token is sent to auction api")
       val expectedAuctionId = getCurrentAuctionId
       val body = CreateAuctionRequest(
@@ -179,6 +112,9 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
     }
 
     "reject authenticated request for auctions list without category" in {
+      Given("valid token for user exists")
+      addValidToken("testuser", "valid-token")
+
       When("request to list auctions with valid authentication token but without category parameter is sent to auction api")
       val authHeader = Authorization(OAuth2BearerToken("valid-token"))
       val request = HttpRequest(uri = "/auctions", method = GET)
@@ -194,6 +130,9 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       Given("two auctions exist in auction api")
       addAuction(Categories(1), "au1", "testuser2", "auction 1", now)
       addAuction(Categories(1), "au2", "testuser3", "auction 2", aBitLater)
+
+      And("valid token for user exists")
+      addValidToken("testuser", "valid-token")
 
       When("request to list auctions with valid authentication token is sent to auction api")
       val authHeader = Authorization(OAuth2BearerToken("valid-token"))
@@ -219,6 +158,9 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       addAuction("test-category", "au1", "testuser2", "auction 1", now)
       addAuction("test-category", "au2", "testuser3", "auction 2", aBitLater)
 
+      And("valid token for user exists")
+      addValidToken("testuser", "valid-token")
+
       When("request to fetch auction with id au2 and with valid authentication token is sent to auction api")
       val authHeader = Authorization(OAuth2BearerToken("valid-token"))
       val request = HttpRequest(uri = "/auctions/au2", method = GET, headers = authHeader :: Nil)
@@ -242,6 +184,9 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
     }
 
     "bid in auction that doesn't exist with correct authentication token" in {
+      Given("valid token for user exists")
+      addValidToken("testuser", "valid-token")
+
       When("request to bid in non-existing auction with with valid authentication token is sent to auction api")
       val authHeader = Authorization(OAuth2BearerToken("valid-token"))
       val body = BidRequest(BigDecimal(10.0d)).toJson.prettyPrint
@@ -258,6 +203,9 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       Given("an auction exists in auction api")
       addAuction("test-category", "au1", "testuser2", "auction 1", now)
       val expectedBidId = getCurrentBidId
+
+      And("valid token for user exists")
+      addValidToken("testuser", "valid-token")
 
       When("request to bid in auction with with valid authentication token is sent to auction api")
       val authHeader = Authorization(OAuth2BearerToken("valid-token"))
@@ -296,6 +244,9 @@ class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures wit
       Given("an auction exists in auction api and a bid with amount 15 for that auction exists")
       addAuctionWithBids("test-category", "au1", "testuser2", "auction 1",
         Bid("some-bid", "anotheruser", BigDecimal(15d)) :: Nil, now)
+
+      And("valid token for user exists")
+      addValidToken("testuser", "valid-token")
 
       When("request to bid in auction with amount 10 is sent to auction api with valid authentication token")
       val authHeader = Authorization(OAuth2BearerToken("valid-token"))

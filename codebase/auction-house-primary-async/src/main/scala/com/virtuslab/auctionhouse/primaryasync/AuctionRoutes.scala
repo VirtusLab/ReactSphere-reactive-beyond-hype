@@ -9,6 +9,7 @@ import akka.http.scaladsl.server.{RejectionHandler, Route, _}
 import com.typesafe.scalalogging.Logger
 import com.virtuslab.{TraceId, TraceIdSupport}
 import com.virtuslab.auctions.Categories
+import com.virtuslab.base.async.{IdentityHelpers, RoutingUtils}
 import io.prometheus.client.Histogram
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
@@ -17,6 +18,8 @@ import scala.util.{Failure, Success}
 
 trait AuctionRoutes extends SprayJsonSupport with DefaultJsonProtocol with RoutingUtils {
   this: AuctionService with IdentityHelpers with TraceIdSupport =>
+
+  type AuthFunction = Credentials => Future[Option[String]]
 
   implicit lazy val cauctrFormat: RootJsonFormat[CreateAuctionRequest] = jsonFormat5(CreateAuctionRequest)
   implicit lazy val mteFormat: RootJsonFormat[MissingTokenError] = jsonFormat1(MissingTokenError)
@@ -43,15 +46,6 @@ trait AuctionRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
       }
       .result()
 
-  lazy val authenticator: Credentials => Future[Option[String]] = {
-    case Credentials.Provided(token) =>
-      val histogramTimer = requestsLatency.labels("authenticate").startTimer()
-      val result = validateToken(token)
-      result.onComplete(_ => histogramTimer.observeDuration())
-      result
-    case _ => Future.successful(None)
-  }
-
   protected def logger: Logger
 
   protected def requestsLatency: Histogram
@@ -62,7 +56,15 @@ trait AuctionRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
     handleRejections(rejectionHandler) {
       optionalHeaderValueByName("X-Trace-Id") { maybeTraceId =>
         implicit val traceId: TraceId = extractTraceId(maybeTraceId)
-        authenticate { username =>
+        val authenticator: AuthFunction = {
+          case Credentials.Provided(token) =>
+            val histogramTimer = requestsLatency.labels("authenticate").startTimer()
+            val result = validateToken(token)
+            result.onComplete(_ => histogramTimer.observeDuration())
+            result
+          case _ => Future.successful(None)
+        }
+        authenticate(traceId, authenticator) { username =>
           path("auctions" / Segment / "bids") { auctionId =>
             post {
               entity(as[BidRequest]) { request =>
@@ -166,6 +168,8 @@ trait AuctionRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
       }
     }
 
-  def authenticate: Directive1[String] = authenticateOAuth2Async(realm = "auction-house", authenticator)
+  def authenticate(traceId: TraceId, authenticator: AuthFunction): Directive1[String] = {
+    authenticateOAuth2Async(realm = "auction-house", authenticator)
+  }
 
 }

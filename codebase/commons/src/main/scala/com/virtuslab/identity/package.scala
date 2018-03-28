@@ -16,4 +16,8 @@ package object identity {
 
   case class TokenResponse(token: String)
 
+  case class ValidateTokenRequest(token: String)
+
+  case class TokenValidationResponse(username: String)
+
 }

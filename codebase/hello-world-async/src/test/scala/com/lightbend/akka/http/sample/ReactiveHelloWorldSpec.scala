@@ -2,6 +2,7 @@ package com.lightbend.akka.http.sample
 
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import com.typesafe.scalalogging.Logger
 import com.virtuslab.helloworldasync.Routes
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{GivenWhenThen, Matchers, WordSpec}
@@ -25,4 +26,5 @@ class ReactiveHelloWorldSpec extends WordSpec with Matchers with ScalaFutures
     }
   }
 
+  override protected def logger: Logger = Logger(classOf[ReactiveHelloWorldSpec])
 }

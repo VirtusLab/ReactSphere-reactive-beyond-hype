@@ -2,18 +2,18 @@ package com.virtuslab.auctionHouse.sync.auctions
 
 import java.util.UUID
 
+import com.virtuslab.TraceId
 import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.{InvalidBidException, InvalidCategoryException}
 import com.virtuslab.auctionHouse.sync.commons.ServletModels.{BidRequest, CreateAuctionRequest, EntityNotFoundException, ErrorResponse}
-import com.virtuslab.auctionHouse.sync.signIn.Authentication
-import com.virtuslab.base.sync.BaseServlet
+import com.virtuslab.base.sync.{Authentication, BaseServlet}
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra._
 
-import scala.util.Try
+import scala.util.{Success, Try}
 
 class AuctionsServlet extends BaseServlet with Authentication {
 
-  override protected implicit def jsonFormats: Formats = DefaultFormats
+  override protected implicit val jsonFormats: Formats = DefaultFormats
 
   override def servletName: String = "AuctionHouse"
 
@@ -24,49 +24,71 @@ class AuctionsServlet extends BaseServlet with Authentication {
   lazy val auctionsService = new AuctionsService()
 
   get("/") {
-    auth { _ =>
-      val traceId = getTraceId
+    implicit val traceId: TraceId = getTraceId
+    auth { username =>
       val histogramTimer = requestsLatency.labels("listAuctions").startTimer()
 
-      val result = params.get("category").map { category =>
+      val attempt = params.get("category").map { category =>
+        logger.info(s"[${traceId.id}] Got list auctions request for category '$category'.")
         Try(auctionsService.listAuctions(category)).map(Ok(_))
           .recover {
-            case e: InvalidCategoryException => BadRequest(e.getMessage)
-          }.get
-      }.getOrElse(BadRequest())
+            case e: InvalidCategoryException =>
+              logger.info(s"[${traceId.id}] Rejecting auction creation request for user '$username' due to invalid category.")
+              BadRequest(e.getMessage)
+          }
+      }.getOrElse {
+        logger.info(s"[${traceId.id}] Rejecting list auctions request for user '$username' due to missing category.")
+        Success(BadRequest())
+      }
+
+      if (attempt.isFailure) {
+        logger.error(s"[${traceId.id}] Error occured while listing auctions for user '$username':", attempt.failed.get)
+      }
 
       histogramTimer.observeDuration()
 
-      result
+      attempt.get
     }
   }
 
   post("/") {
-    auth { account =>
+    implicit val traceId: TraceId = getTraceId
+    auth { username =>
+      logger.info(s"[${traceId.id}] Got create auction request for user '$username'.")
       val histogramTimer = requestsLatency.labels("createAuction").startTimer()
 
       val auctionRequest = parsedBody.extract[CreateAuctionRequest]
-      val result = Try(auctionsService.createAuction(auctionRequest, account.username)).map(id => Created(id))
+      val attempt = Try(auctionsService.createAuction(auctionRequest, username))
+        .map(id => {
+          logger.info(s"[${traceId.id}] Created auction '$id' for user '$username'.")
+          Created(CreatedAuction(id.toString))
+        })
         .recover {
-          case e: InvalidCategoryException => BadRequest(e.getMessage)
-        }.get
+          case e: InvalidCategoryException =>
+            logger.info(s"[${traceId.id}] Rejecting auction creation request for user '$username' due to invalid category.")
+            BadRequest(e.getMessage)
+        }
+
+      if (attempt.isFailure) {
+        logger.error(s"[${traceId.id}] Error occured while creating auction for user '$username':", attempt.failed.get)
+      }
 
       histogramTimer.observeDuration()
 
-      result
+      attempt.get
     }
   }
 
   post("/:id/bids") {
-    auth { user =>
-      val traceId = getTraceId
+    implicit val traceId: TraceId = getTraceId
+    auth { username =>
       val histogramTimer = requestsLatency.labels("bidInAuction").startTimer()
       val bidValue = parsedBody.extract[BidRequest].amount
       val auctionId = params("id")
 
       logger.info(s"[${traceId.id}] Received bid in auction request for auction '$auctionId'.")
 
-      val attempt = Try(auctionsService.bidInAuction(UUID.fromString(auctionId), bidValue, user.username))
+      val attempt = Try(auctionsService.bidInAuction(UUID.fromString(auctionId), bidValue, username))
         .map(_ => {
           logger.info(s"[${traceId.id}] Added bid for auction '$auctionId'.")
           Created()
@@ -91,8 +113,8 @@ class AuctionsServlet extends BaseServlet with Authentication {
   }
 
   get("/:id") {
+    implicit val traceId: TraceId = getTraceId
     auth { _ =>
-      val traceId = getTraceId
       val histogramTimer = requestsLatency.labels("fetchAuction").startTimer()
       val auctionId = params("id")
 
@@ -104,10 +126,14 @@ class AuctionsServlet extends BaseServlet with Authentication {
           Ok(auction)
         })
         .recover {
-          case e: EntityNotFoundException => BadRequest(e.getMessage)
+          case e: EntityNotFoundException =>
+            logger.warn(s"[${traceId.id}] Auction '$auctionId' was not found.")
+            BadRequest(e.getMessage)
         }
 
-
+      if (attempt.isFailure) {
+        logger.error(s"[${traceId.id}] Error occured while adding bid for auction '$auctionId':", attempt.failed.get)
+      }
 
       histogramTimer.observeDuration()
 
