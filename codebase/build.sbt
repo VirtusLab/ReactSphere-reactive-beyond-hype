@@ -20,7 +20,7 @@ lazy val commonSettings = Seq(
   git.baseVersion     := "0.1.0",
   scalaVersion        := "2.12.4",
 
-  coverageEnabled := true,
+//  coverageEnabled := true,
   coverallsGitRepoLocation := Some("../"),
 
   fork in Test := true
