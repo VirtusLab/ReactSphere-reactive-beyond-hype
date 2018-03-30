@@ -30,7 +30,7 @@ class SignInServlet extends BaseServlet {
     val histogramTimer = requestsLatency.labels("signInRequest").startTimer()
     val signInReq = parsedBody.extract[SignInRequest]
 
-    logger.info(s"[${traceId.id}] Received sign in request for user '${signInReq.username}' ...")
+    log.info(s"[${traceId.id}] Received sign in request for user '${signInReq.username}' ...")
 
     try {
       accountsMapper.getOption(signInReq.username).map(u =>
@@ -38,20 +38,20 @@ class SignInServlet extends BaseServlet {
           val token = new Token(UUID.randomUUID().toString, u.username,
             new Date(Instant.now().plus(60, ChronoUnit.MINUTES).toEpochMilli))
           tokensMapper.save(token)
-          logger.info(s"[${traceId.id}] Successful sign in for user '${signInReq.username}', responding with access token.")
+          log.info(s"[${traceId.id}] Successful sign in for user '${signInReq.username}', responding with access token.")
           Ok(TokenResponse(token.bearer_token))
         } else {
-          logger.warn(s"[${traceId.id}] Authentication failure for '${signInReq.username}' detected.")
+          log.warn(s"[${traceId.id}] Authentication failure for '${signInReq.username}' detected.")
           Unauthorized()
         }
       ).getOrElse {
-        logger.warn(s"[${traceId.id}] Authentication failure for '${signInReq.username}' detected.")
+        log.warn(s"[${traceId.id}] Authentication failure for '${signInReq.username}' detected.")
         Unauthorized()
       }
     }
     catch {
       case exception: Throwable =>
-        logger.error(s"[${traceId.id}] Error occured while signing in '${signInReq.username}':", exception)
+        log.error(s"[${traceId.id}] Error occured while signing in '${signInReq.username}':", exception)
         throw exception
     }
     finally {

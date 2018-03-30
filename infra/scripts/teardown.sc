@@ -1,8 +1,8 @@
-import $file.build
-import $file.deployments
-import $file.display
-import $file.tectonic
-import $file.vars
+import $file.common.build
+import $file.common.display
+import $file.tectonic.deployments
+import $file.tectonic.tectonic
+import $file.tectonic.vars
 
 import deployments._
 import display._

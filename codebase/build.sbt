@@ -19,6 +19,14 @@ lazy val commonSettings = Seq(
   organization        := "com.virtuslab",
   git.baseVersion     := "0.1.0",
   scalaVersion        := "2.12.4",
+
+  coverageEnabled := true,
+  coverallsGitRepoLocation := Some("../"),
+
+  fork in Test := true
+)
+
+lazy val containerSettings = Seq(
   dockerBaseImage     := "openjdk:jre-alpine",
   dockerUpdateLatest  := true,
   dockerRepository    := Some(System.getProperty("docker.registry.host", "docker-registry.local")),
@@ -29,14 +37,7 @@ lazy val commonSettings = Seq(
     "-J-XX:MaxRAMFraction=1",
     "-J-XshowSettings:vm",
     s"-Dservice.version=${version.value}"
-  ),
-
-  // enable this when https://github.com/scoverage/sbt-coveralls/pull/110 is merged
-  // and 1.2.3 version released
-  // coverageEnabled := true,
-  // coverallsGitRepoLocation := Some("../"),
-
-  fork in Test := true
+  )
 )
 
 lazy val commons = (project in file("commons"))
@@ -80,10 +81,9 @@ lazy val baseSync = (project in file("base-sync"))
       "com.typesafe"      %  "config"             % "1.3.2",
       "org.scalaj"        %% "scalaj-http"        % "2.3.0",
       "org.mockito"       %  "mockito-core"       % "2.15.0"          % Test
-    ),
-    dockerCommands ++= installBashCommands
+    )
   )
-  .enablePlugins(ScalatraPlugin, JavaAppPackaging, DockerPlugin, GitVersioning)
+  .enablePlugins(ScalatraPlugin, GitVersioning)
   .dependsOn(commons % compileTestScope)
 
 lazy val baseAsync = (project in file("base-async"))
@@ -98,14 +98,14 @@ lazy val baseAsync = (project in file("base-async"))
       "com.typesafe.akka"          %% "akka-testkit"          % AkkaVersion       % Test,
       "com.typesafe.akka"          %% "akka-stream-testkit"   % AkkaVersion       % Test
     ),
-    dockerCommands ++= installBashCommands
   )
-  .enablePlugins(JavaAppPackaging, DockerPlugin, GitVersioning)
+  .enablePlugins(GitVersioning)
   .dependsOn(commons % compileTestScope)
 
 lazy val auctionHousePrimarySync = (project in file("auction-house-primary-sync"))
   .settings(
     commonSettings,
+    containerSettings,
     name := "auction-house-primary-sync",
     resolvers += Classpaths.typesafeReleases,
     dockerCommands ++= installBashCommands
@@ -119,6 +119,7 @@ lazy val auctionHousePrimarySync = (project in file("auction-house-primary-sync"
 lazy val auctionHousePrimaryAsync = (project in file("auction-house-primary-async"))
   .settings(
     commonSettings,
+    containerSettings,
     name := "auction-house-primary-async",
     dockerCommands ++= installBashCommands
   )
@@ -131,6 +132,7 @@ lazy val auctionHousePrimaryAsync = (project in file("auction-house-primary-asyn
 lazy val identityServiceTertiaryAsync = (project in file("identity-service-tertiary-async"))
   .settings(
     commonSettings,
+    containerSettings,
     name := "identity-service-tertiary-async",
     dockerCommands ++= installBashCommands
   )
@@ -143,6 +145,7 @@ lazy val identityServiceTertiaryAsync = (project in file("identity-service-terti
 lazy val identityServiceTertiarySync = (project in file("identity-service-tertiary-sync"))
   .settings(
     commonSettings,
+    containerSettings,
     name := "identity-service-tertiary-sync",
     resolvers += Classpaths.typesafeReleases,
     dockerCommands ++= installBashCommands
@@ -156,6 +159,7 @@ lazy val identityServiceTertiarySync = (project in file("identity-service-tertia
 lazy val helloWorldSync = (project in file("hello-world-sync"))
   .settings(
     commonSettings,
+    containerSettings,
     name := "hello-world-sync",
     resolvers += Classpaths.typesafeReleases,
     dockerCommands ++= installBashCommands
@@ -169,6 +173,7 @@ lazy val helloWorldSync = (project in file("hello-world-sync"))
 lazy val helloWorldAsync = (project in file("hello-world-async"))
   .settings(
     commonSettings,
+    containerSettings,
     name := "hello-world-async",
     dockerCommands ++= installBashCommands
   )
@@ -181,6 +186,7 @@ lazy val helloWorldAsync = (project in file("hello-world-async"))
 lazy val billingServiceSecondarySync = (project in file("billing-service-secondary-sync"))
     .settings(
       commonSettings,
+      containerSettings,
       name := "billing-service-secondary-sync",
       resolvers += Classpaths.typesafeReleases,
       dockerCommands ++= installBashCommands
@@ -194,6 +200,7 @@ lazy val billingServiceSecondarySync = (project in file("billing-service-seconda
 lazy val paymentSystem = (project in file("payment-system"))
   .settings(
     commonSettings,
+    containerSettings,
     name := "payment-system",
     resolvers += Classpaths.typesafeReleases,
     dockerCommands ++= installBashCommands
@@ -207,6 +214,7 @@ lazy val paymentSystem = (project in file("payment-system"))
 lazy val gatlingTests = (project in file("gatling-tests"))
   .settings(
     commonSettings,
+    containerSettings,
     name := "gatling-tests",
     libraryDependencies ++= Seq(
       "io.gatling.highcharts"      %  "gatling-charts-highcharts" % "2.3.0",
@@ -224,10 +232,17 @@ lazy val gatlingTests = (project in file("gatling-tests"))
   .disablePlugins(CoverallsPlugin)
   .dependsOn(commons % compileTestScope)
 
+lazy val syncServices = Seq(helloWorldSync, auctionHousePrimarySync, billingServiceSecondarySync)
+lazy val asyncServices = Seq(helloWorldAsync, auctionHousePrimaryAsync)
+lazy val otherServices = Seq(paymentSystem)
+
+
+val deployLocally = taskKey[Unit]("Published all services to local Docker repository")
+
 lazy val root = (project in file("."))
   .settings(
     commonSettings,
-    name := "beyond-the-hype-codebase",
+    name := "beyond-the-hype-codebase"
   )
   .aggregate(
     helloWorldSync, helloWorldAsync,

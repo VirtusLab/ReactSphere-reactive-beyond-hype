@@ -1,5 +1,6 @@
+import $file.^.common.display
+
 import ammonite.ops._
-import $file.display
 import display.ProgressBar
 import scala.util.Try
 

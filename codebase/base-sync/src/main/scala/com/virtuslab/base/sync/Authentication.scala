@@ -1,12 +1,13 @@
 package com.virtuslab.base.sync
 
 import com.virtuslab.identity.{TokenValidationResponse, ValidateTokenRequest}
-import com.virtuslab.{Config, RequestMetrics, TraceId}
+import com.virtuslab._
 import org.json4s.jackson.Serialization.{read, write}
 import org.scalatra.ScalatraBase
+
 import scalaj.http._
 
-trait Authentication extends ScalatraBase { this: RequestMetrics =>
+trait Authentication extends ScalatraBase with TraceIdSupport { this: RequestMetrics with Logging =>
 
   import org.json4s._
 
@@ -18,6 +19,7 @@ trait Authentication extends ScalatraBase { this: RequestMetrics =>
   )
 
   private val identityUrl = s"http://${Config.identityServiceContactPoint}/api/v1/validate"
+  log.info(s"Identity url is: ${identityUrl}")
 
   protected implicit val jsonFormats: Formats = DefaultFormats
 
@@ -27,7 +29,7 @@ trait Authentication extends ScalatraBase { this: RequestMetrics =>
     val maybeUsername = getToken.flatMap { requestedToken =>
       val body = write(ValidateTokenRequest(requestedToken))
       val response = Http(identityUrl)
-        .headers(("X-Trace-Id", traceId.id) :: ("Content-Type", "application/json") :: Nil)
+        .headers(traceHeaders)
         .postData(body)
         .asString
 
@@ -40,7 +42,10 @@ trait Authentication extends ScalatraBase { this: RequestMetrics =>
 
     histogramTimer.observeDuration()
 
-    val username = maybeUsername getOrElse halt(status = 401)
+    val username = maybeUsername.getOrElse {
+      log.warn(s"Request cannot be authenticated, token is: ${getToken.getOrElse("<empty>")}")
+      halt(status = 401)
+    }
 
     fun(username)
   }

@@ -24,20 +24,20 @@ class ValidationServlet extends BaseServlet {
     val histogramTimer = requestsLatency.labels("validateTokenRequest").startTimer()
     val validateTokenRequest = parsedBody.extract[ValidateTokenRequest]
 
-    logger.info(s"[${traceId.id}] Received validate token request...")
+    log.info(s"[${traceId.id}] Received validate token request...")
 
     val attempt = Try(validationService.validateToken(validateTokenRequest))
       .map {
         case Some(username) =>
-          logger.info(s"[${traceId.id}] Successful validation of token, responding with user name '$username'.")
+          log.info(s"[${traceId.id}] Successful validation of token, responding with user name '$username'.")
           Ok(TokenValidationResponse(username))
         case None =>
-          logger.warn(s"[${traceId.id}] Token validation failure, responding with 401 Unauthorized.")
+          log.warn(s"[${traceId.id}] Token validation failure, responding with 401 Unauthorized.")
           Unauthorized()
       }
 
     if (attempt.isFailure) {
-      logger.error(s"[${traceId.id}] Error occured while validating token:", attempt.failed.get)
+      log.error(s"[${traceId.id}] Error occured while validating token:", attempt.failed.get)
     }
 
     histogramTimer.observeDuration()

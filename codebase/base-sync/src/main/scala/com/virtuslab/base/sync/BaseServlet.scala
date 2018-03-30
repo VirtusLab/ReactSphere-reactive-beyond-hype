@@ -1,16 +1,16 @@
 package com.virtuslab.base.sync
 
 import com.typesafe.scalalogging.Logger
-import com.virtuslab.{RequestMetrics, TraceId, TraceIdSupport}
+import com.virtuslab.{Logging, RequestMetrics, TraceId, TraceIdSupport}
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.ScalatraServlet
 import org.scalatra.json.JacksonJsonSupport
 
-trait BaseServlet extends ScalatraServlet with JacksonJsonSupport with RequestMetrics with TraceIdSupport {
+trait BaseServlet extends ScalatraServlet with JacksonJsonSupport with RequestMetrics with TraceIdSupport with Logging {
 
   def servletName: String
 
-  protected val logger: Logger = Logger(servletName)
+  override protected val log: Logger = Logger(servletName)
 
   override protected implicit def jsonFormats: Formats = DefaultFormats
 
@@ -18,7 +18,7 @@ trait BaseServlet extends ScalatraServlet with JacksonJsonSupport with RequestMe
 
   error {
     case e: Throwable => {
-      logger.error("Unexpected error", e)
+      log.error("Unexpected error", e)
       throw e
     }
   }
