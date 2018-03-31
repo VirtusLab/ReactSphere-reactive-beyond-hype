@@ -1,10 +1,10 @@
 package com.virtuslab.billingsync
 
 import com.virtuslab.billingsync.BillingService.{TransactionId, UserId}
-import com.virtuslab.payments.PaymentModel.PaymentRequest
-import com.virtuslab.{Config, TraceId, TraceIdSupport}
-import org.json4s.{DefaultFormats, Formats}
+import com.virtuslab.payments.payments.PaymentRequest
+import com.virtuslab.{Config, HeadersSupport, TraceId}
 import org.json4s.jackson.Serialization.write
+import org.json4s.{DefaultFormats, Formats}
 
 import scala.util.{Failure, Random, Try}
 import scalaj.http.Http
@@ -22,14 +22,14 @@ object BillingService {
   }
 }
 
-class BillingService extends TraceIdSupport {
+class BillingService extends HeadersSupport {
 
   protected implicit val jsonFormats: Formats = DefaultFormats
 
   private lazy val paymentSystemUrl = s"http://${Config.paymentSystemContactPoint}/api/v1/payment"
 
-  def performPayment(payer: UserId, payee: UserId)(implicit traceId: TraceId): Try[TransactionId] = {
-    val body = write(PaymentRequest("me", "you", 5000))
+  def performPayment(payer: UserId, payee: UserId, amount: Int)(implicit traceId: TraceId): Try[TransactionId] = {
+    val body = write(PaymentRequest("me", "you", amount))
     val response = Http(paymentSystemUrl)
       .headers(traceHeaders)
       .postData(body)

@@ -7,16 +7,9 @@ import org.scalatra.ScalatraBase
 
 import scalaj.http._
 
-trait Authentication extends ScalatraBase with TraceIdSupport { this: RequestMetrics with Logging =>
+trait Authentication extends ScalatraBase with TraceIdSupport with HeadersSupport { this: RequestMetrics with Logging =>
 
   import org.json4s._
-
-  private val AUTHORIZATION_KEYS = Seq(
-    "Authorization",
-    "HTTP_AUTHORIZATION",
-    "X-HTTP_AUTHORIZATION",
-    "X_HTTP_AUTHORIZATION"
-  )
 
   private val identityUrl = s"http://${Config.identityServiceContactPoint}/api/v1/validate"
   log.info(s"Identity url is: ${identityUrl}")
@@ -27,7 +20,7 @@ trait Authentication extends ScalatraBase with TraceIdSupport { this: RequestMet
     val histogramTimer = requestsLatency.labels("authenticate").startTimer()
 
     val maybeUsername = getToken.flatMap { requestedToken =>
-      val body = write(ValidateTokenRequest(requestedToken))
+      val body = write(ValidateTokenRequest(requestedToken.value))
       val response = Http(identityUrl)
         .headers(traceHeaders)
         .postData(body)
@@ -50,10 +43,12 @@ trait Authentication extends ScalatraBase with TraceIdSupport { this: RequestMet
     fun(username)
   }
 
-  private def getToken: Option[String] = {
+  implicit protected def getToken: Option[AuthToken] = {
     AUTHORIZATION_KEYS.find(k => Option(request.getHeader(k)).isDefined)
       .map(request.getHeader(_).trim.split(" ", 2).map(_.trim))
       .find(arr => arr.length == 2 && arr(0).equalsIgnoreCase("bearer"))
-      .map(_(1))
+      .map { arr =>
+        AuthToken(arr(1))
+      }
   }
 }

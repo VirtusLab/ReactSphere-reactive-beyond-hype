@@ -1,7 +1,7 @@
 package com.virtuslab.payment
 
 import com.virtuslab.base.sync.BaseServlet
-import com.virtuslab.payments.PaymentModel.PaymentRequest
+import com.virtuslab.payments.payments.PaymentRequest
 import org.scalatra.Ok
 
 

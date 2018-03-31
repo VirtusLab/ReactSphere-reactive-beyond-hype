@@ -12,6 +12,20 @@ Repo for presentation on ReactSphere: Reactive beyond hype
 
 ### Development setup:
 
+First of all you may run the whole stack locally via on docker containers or run whole tectonic k8s cluster. The latter is much more aligned with the real production configuration.
+
+#### Container local setup
+
+Local setup with dockerized containers is extremely easy.
+
+For sync stack setup you run (you need to be in repo root directory):
+
+`amm infra/scripts/build-run-docker-sync.sc`
+
+This will build code, wrap containers, run Cassandra and all services (sync ones) locally.
+
+#### Tectonic local setup
+
 ##### Adjust VM memory sizes in Vagrantfile:
 
 Find these lines in `tectonic/Vagrantfile` and adjust them to your needs:
@@ -52,27 +66,6 @@ vagrant up
 ```
 cd codebase
 ./sbt test
-```
-
-### Running it (on local docker host):
-
-Run everything in `codebase` directory in sbt shell after project change (ie.: `project hello-world-sync`):
-
-```
-docker:publishLocal
-```
-and then...
-```bash
-docker run --rm -it -p 8080:8080 hello-world-async:0.1.0-SNAPSHOT
-```
-or:
-```bash
-docker run --rm -it -p 8080:8080 hello-world-sync:0.1.0-SNAPSHOT
-```
-
-and then:
-```bash
-curl -i localhost:8080
 ```
 
 ### Deploying Docker Registry to Tectonic Cluster

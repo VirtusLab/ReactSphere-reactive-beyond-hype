@@ -7,5 +7,6 @@ object Config {
 
   lazy val cassandraContactPoint: String = conf.getString("cassandra.contactPoint")
   lazy val identityServiceContactPoint: String = conf.getString("identityService.contactPoint")
+  lazy val billingServiceConctactPoint: String = conf.getString("billingService.contactPoint")
   lazy val paymentSystemContactPoint: String = conf.getString("paymentSystem.contactPoint")
 }
