@@ -41,6 +41,11 @@ class AuctionsActions(errorHandler: ErrorHandler) extends BaseActions(errorHandl
       }.getOrElse(errorHandler.raiseError("Auction not found in gatling session"))
   }
 
+  protected val payForAuctionUrl: Expression[String] = (session: Session) => {
+    session(selectedAuctionParam).asOption[AuctionViewResponse]
+      .map(a => url(s"finalize/${a.auctionId}"))
+      .getOrElse(errorHandler.raiseError("Auction not found in gatling session"))
+  }
 
   def randAuction(category: String) = CreateAuctionRequest(category, randStr, randStr, randPosNum,
     parse(s"""{"$randStr": "$randStr"}"""))
@@ -93,6 +98,15 @@ class AuctionsActions(errorHandler: ErrorHandler) extends BaseActions(errorHandl
       .copy(commonAttributes = getAuctionBuilder.commonAttributes.copy(requestName = "get auction with bids"))
       .check(
         bodyString.transform(parse(_).extract[AuctionViewResponse].bids.size).greaterThanOrEqual(1)
+      )
+  }
+
+  def payForAuction = {
+    http("Pay for auction")
+      .post(payForAuctionUrl)
+      .withAuthHeaders()
+      .check(
+        status.in(200)
       )
   }
 }

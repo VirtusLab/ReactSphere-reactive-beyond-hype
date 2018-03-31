@@ -34,6 +34,7 @@ class AuctionHouseSimulation extends Simulation with RandomHelper {
     }.exec(auctions.getAuction)
     .exec(auctions.bidInAuction)
     .exec(auctions.getAuctionWithBids)
+    .exec(auctions.payForAuction)
 
 
   setUp(
