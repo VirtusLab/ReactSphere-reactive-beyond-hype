@@ -2,28 +2,22 @@ package com.virtuslab.auctionhouse.primaryasync
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.StatusCodes._
-import akka.http.scaladsl.server.AuthenticationFailedRejection._
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.directives.Credentials
-import akka.http.scaladsl.server.{RejectionHandler, Route, _}
+import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.Logger
-import com.virtuslab.{TraceId, TraceIdSupport}
 import com.virtuslab.auctions.Categories
-import com.virtuslab.base.async.{IdentityHelpers, RoutingUtils}
+import com.virtuslab.base.async.{IdentityHelpers, RoutesAuthSupport, RoutingUtils}
+import com.virtuslab.{HeadersSupport, TraceId, TraceIdSupport}
 import io.prometheus.client.Histogram
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
-trait AuctionRoutes extends SprayJsonSupport with DefaultJsonProtocol with RoutingUtils {
+trait AuctionRoutes extends SprayJsonSupport with DefaultJsonProtocol with RoutingUtils with HeadersSupport with RoutesAuthSupport {
   this: AuctionService with IdentityHelpers with TraceIdSupport =>
 
-  type AuthFunction = Credentials => Future[Option[String]]
-
   implicit lazy val cauctrFormat: RootJsonFormat[CreateAuctionRequest] = jsonFormat5(CreateAuctionRequest)
-  implicit lazy val mteFormat: RootJsonFormat[MissingTokenError] = jsonFormat1(MissingTokenError)
-  implicit lazy val iteFormat: RootJsonFormat[InvalidTokenError] = jsonFormat1(InvalidTokenError)
   implicit lazy val caFormat: RootJsonFormat[CreatedAuction] = jsonFormat1(CreatedAuction)
   implicit lazy val aiFormat: RootJsonFormat[AuctionInfo] = jsonFormat5(AuctionInfo)
   implicit lazy val bidFormat: RootJsonFormat[Bid] = jsonFormat3(Bid)
@@ -32,19 +26,6 @@ trait AuctionRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
   implicit lazy val bidReqFormat: RootJsonFormat[BidRequest] = jsonFormat1(BidRequest)
 
   protected val categoriesSet: Set[String] = Categories.toSet
-
-  def rejectionHandler: RejectionHandler =
-    RejectionHandler.newBuilder()
-      .handle { case MissingQueryParamRejection(_) =>
-        complete(BadRequest)
-      }
-      .handle { case AuthenticationFailedRejection(cause, _) =>
-        cause match {
-          case CredentialsMissing => complete((Unauthorized, MissingTokenError()))
-          case CredentialsRejected => complete((Forbidden, InvalidTokenError()))
-        }
-      }
-      .result()
 
   protected def logger: Logger
 
@@ -56,14 +37,6 @@ trait AuctionRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
     handleRejections(rejectionHandler) {
       optionalHeaderValueByName("X-Trace-Id") { maybeTraceId =>
         implicit val traceId: TraceId = extractTraceId(maybeTraceId)
-        val authenticator: AuthFunction = {
-          case Credentials.Provided(token) =>
-            val histogramTimer = requestsLatency.labels("authenticate").startTimer()
-            val result = validateToken(token)
-            result.onComplete(_ => histogramTimer.observeDuration())
-            result
-          case _ => Future.successful(None)
-        }
         authenticate(traceId, authenticator) { username =>
           path("auctions" / Segment / "bids") { auctionId =>
             post {
@@ -97,6 +70,34 @@ trait AuctionRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
               }
             }
           } ~
+            path("finalize" / Segment) { auctionId =>
+              post {
+                extractRequest { httpRequest =>
+                  val token = httpRequest.headers.find(h => AUTHORIZATION_KEYS.contains(h.name()))
+                    .flatMap(h => parseAuthHeader(h.value())).get
+                  logger.info(s"[${traceId.id}] Received pay request for auction '$auctionId'.")
+
+                  val histogramTimer = requestsLatency.labels("payForAuction").startTimer()
+
+                  onComplete(payForAuction(auctionId, username, token)) {
+                    case Success(_) =>
+                      logger.info(s"[${traceId.id}] Added bid for auction '$auctionId'.")
+                      histogramTimer.observeDuration()
+                      complete(OK)
+
+                    case Failure(_: NotActionWinner) =>
+                      logger.warn(s"[${traceId.id}] Bidder '$username' is not auction '$auctionId' winner.")
+                      histogramTimer.observeDuration()
+                      complete(BadRequest, Error("your bid is not high enough"))
+
+                    case Failure(exception) =>
+                      logger.error(s"[${traceId.id}] Error occurred while paying for auction '$auctionId':", exception)
+                      histogramTimer.observeDuration()
+                      failWith(exception)
+                  }
+                }
+              }
+            } ~
             path("auctions" / Segment) { auctionId =>
               get {
                 logger.info(s"[${traceId.id}] Got fetch request for auction '$auctionId'.")
@@ -167,9 +168,4 @@ trait AuctionRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
         }
       }
     }
-
-  def authenticate(traceId: TraceId, authenticator: AuthFunction): Directive1[String] = {
-    authenticateOAuth2Async(realm = "auction-house", authenticator)
-  }
-
 }

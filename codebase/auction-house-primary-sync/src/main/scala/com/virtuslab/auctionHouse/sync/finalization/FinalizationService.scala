@@ -14,7 +14,7 @@ class FinalizationService extends TraceIdSupport with Logging with HeadersSuppor
 
   private implicit val jsonFormats: Formats = DefaultFormats
 
-  private val billingUrl = s"http://${Config.billingServiceConctactPoint}/api/v1/billing"
+  private val billingUrl = s"http://${Config.billingServiceContactPoint}/api/v1/billing"
   log.info(s"Billing url is: ${billingUrl}")
 
   def finalizeAuction()(implicit traceId: TraceId, authToken: Option[AuthToken]): Unit = {

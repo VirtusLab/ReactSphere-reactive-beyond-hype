@@ -1,5 +1,6 @@
 package com.virtuslab.auctionhouse.primaryasync
 
+import akka.actor.ActorSystem
 import com.datastax.driver.core.utils.UUIDs
 import com.typesafe.scalalogging.Logger
 import com.virtuslab.auctionhouse.cassandra.CassandraIntegrationTest
@@ -10,14 +11,19 @@ import spray.json.{JsArray, JsObject, JsString}
 
 import scala.concurrent.ExecutionContext.Implicits
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 class AuctionServiceIntegrationTest extends WordSpec with Matchers with ScalaFutures with GivenWhenThen
   with OptionValues with CassandraIntegrationTest with AuctionServiceImpl {
 
   implicit val executionContext: ExecutionContext = Implicits.global
   implicit val traceId: TraceId = TraceId(UUIDs.random().toString)
+
   override protected def logger: Logger = Logger(getClass)
+
+  override protected implicit def system: ActorSystem = ???
+
+  override protected def createBill(billRequest: PayRequest, token: String)(implicit traceId: TraceId): Future[Unit] = Future.successful()
 
   "Auction service" should {
 
@@ -174,9 +180,35 @@ class AuctionServiceIntegrationTest extends WordSpec with Matchers with ScalaFut
       Then("bid for given auction exists in database")
       val auction = Await.result(getAuction(auctionId), 1.second)
       auction.bids.length should be(2)
-      val sortedBids = auction.bids.sortBy(- _.amount)
+      val sortedBids = auction.bids.sortBy(-_.amount)
       sortedBids.head.amount should be(BigDecimal(30))
       sortedBids.head.bidder should be("test-bidder-2")
+    }
+
+    "process paying for auctions when bidder bid is highest" in {
+      Given("auction with a bid exists and it's id is known")
+      val auctionId = Await.result(createAuction {
+        CreateAuction(
+          "testuser", "test-category", "test auction", "test item description",
+          BigDecimal(20d), JsObject("something" -> JsString("else"))
+        )
+      }, 1.second)
+      Await.result(bidInAuction {
+        BidInAuction("test-bidder", auctionId, BigDecimal(25))
+      }, 1.second)
+
+      When("bid with amount higher than current maximum bid is created for that auction")
+      Await.result(bidInAuction {
+        BidInAuction("test-bidder-2", auctionId, BigDecimal(30))
+      }, 1.second)
+
+      Await.result(payForAuction(auctionId, "test-bidder-2", "some-token"), 1.second)
+      intercept[NotActionWinner] {
+        Await.result(payForAuction(auctionId, "test-bidder-1", "some-token"), 1.second)
+      }
+      intercept[NotActionWinner] {
+        Await.result(payForAuction(auctionId, "test-bidder-3", "some-token"), 1.second)
+      }
     }
 
   }
