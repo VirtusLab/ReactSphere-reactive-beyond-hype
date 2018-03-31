@@ -12,17 +12,12 @@ class AccountsActions(errorHandler: ErrorHandler) extends BaseActions(errorHandl
 
   protected val logger = LoggerFactory.getLogger(getClass)
 
-
-  val baseUrl = s"http://${Config.serverHostPort}/api/${Config.apiVersion}/"
-
   val scenarioErrors = new ConcurrentLinkedQueue[String]()
-
-
-
+  def url(path: String) =  s"http://${Config.identityServiceHostPort}/api/${Config.apiVersion}/$path"
 
   def createAccount(username: String = randStr, password: String = randStr) = {
     http("Account creation")
-      .post("accounts")
+      .post(url("accounts"))
       .header("Content-Type", "application/json")
       .body(StringBody(s"""{"username": "${username}", "password" : "${password}"}"""))
       .check(
@@ -35,7 +30,7 @@ class AccountsActions(errorHandler: ErrorHandler) extends BaseActions(errorHandl
 
   def signIn = {
     http("sign in")
-      .post("sign-in")
+      .post(url("sign-in"))
       .header("Content-Type", "application/json")
       .body(StringBody(SessionParams.signInRequestTemplate))
       .check(
