@@ -13,7 +13,7 @@ import com.virtuslab.{RequestMetrics, TraceId}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterEach, GivenWhenThen, Matchers, WordSpec}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class IdentityAsyncSpec extends WordSpec with Matchers with ScalaFutures with ScalatestRouteTest
   with GivenWhenThen with BeforeAndAfterEach
@@ -107,4 +107,5 @@ class IdentityAsyncSpec extends WordSpec with Matchers with ScalaFutures with Sc
 
   }
 
+  override def validateToken(token: String)(implicit traceId: TraceId): Future[Option[String]] = ???
 }

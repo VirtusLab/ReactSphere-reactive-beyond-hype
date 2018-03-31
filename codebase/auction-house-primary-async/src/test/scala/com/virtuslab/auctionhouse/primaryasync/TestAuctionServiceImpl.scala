@@ -83,6 +83,8 @@ trait TestAuctionServiceImpl extends AuctionService {
     }
   }
 
+  override def payForAuction(auctionId: String, bidder: String, token: String)(implicit traceId: TraceId): Future[Unit] = ???
+
   def clearAuctionData(): Unit = {
     auctions = Map.empty
     currentAuctionId.set(UUID.randomUUID.toString)

@@ -14,7 +14,7 @@ trait Routes extends BaseRoutes
 
   protected def logger: Logger
 
-  def serviceRoutes: Route =
+  override def serviceRoutes: Route =
     pathPrefix("api") {
       pathPrefix("v1") {
           auctionRoutes

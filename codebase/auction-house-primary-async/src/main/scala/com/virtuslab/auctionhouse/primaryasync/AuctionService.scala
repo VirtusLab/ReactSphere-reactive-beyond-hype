@@ -5,12 +5,19 @@ import java.time.LocalDateTime
 import java.util.Objects.isNull
 import java.util.UUID
 
+import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.model.ContentTypes.`application/json`
+import akka.http.scaladsl.model.HttpMethods.POST
+import akka.http.scaladsl.model.headers.RawHeader
+import akka.http.scaladsl.model.{HttpEntity, HttpRequest}
 import com.datastax.driver.core.querybuilder.QueryBuilder.{desc, insertInto, select, eq => equal}
 import com.datastax.driver.core.utils.UUIDs
 import com.datastax.driver.core.{ResultSet, Row, Session}
 import com.typesafe.scalalogging.Logger
-import com.virtuslab.TraceId
 import com.virtuslab.cassandra.CassandraClient
+import com.virtuslab.{Config, HeadersSupport, TraceId}
 import spray.json._
 
 import scala.collection.mutable.ArrayBuffer
@@ -19,10 +26,16 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait AuctionService {
 
+  protected implicit def system: ActorSystem
+
   // errors
   case class AuctionNotFound(auctionId: String) extends RuntimeException(auctionId)
 
   case class BidTooSmall(auctionId: String, highestBidAmount: BigDecimal) extends RuntimeException(s"$auctionId:$highestBidAmount")
+
+  case class NotActionWinner(bidder: String, auctionId: String) extends RuntimeException(s"$auctionId:$bidder")
+
+  case class BillingServiceError() extends RuntimeException(s"Unexpected billing service error")
 
   // request vm
   case class CreateAuctionRequest(category: String, title: String, description: String,
@@ -39,6 +52,8 @@ trait AuctionService {
                            description: String, minimumPrice: BigDecimal, details: JsObject)
 
   case class BidInAuction(bidder: String, auctionId: String, amount: BigDecimal)
+
+  case class PayForAuction(bidder: String, auctionId: String)
 
   // response VMs
   case class CreatedAuction(auctionId: String)
@@ -61,9 +76,11 @@ trait AuctionService {
   def getAuction(auctionId: String)(implicit traceId: TraceId): Future[AuctionResponse]
 
   def bidInAuction(command: BidInAuction)(implicit traceId: TraceId): Future[Unit]
+
+  def payForAuction(auctionId: String, bidder: String, token: String)(implicit traceId: TraceId): Future[Unit]
 }
 
-trait AuctionServiceImpl extends AuctionService {
+trait AuctionServiceImpl extends AuctionService with SprayJsonSupport with DefaultJsonProtocol with HeadersSupport {
   this: CassandraClient =>
 
   import com.virtuslab.AsyncUtils.Implicits._
@@ -123,10 +140,6 @@ trait AuctionServiceImpl extends AuctionService {
       .orderBy(desc("created_at"))
       .limit(1)
 
-    val bidsQuery = select().all()
-      .from("microservices", "bids")
-      .where(equal("auction_id", auctionIdUuid))
-
     def transformAuctionResultSet(auctionRs: ResultSet, bids: List[Bid]): Future[AuctionResponse] = {
       Option(auctionRs.one())
         .map { row =>
@@ -148,7 +161,7 @@ trait AuctionServiceImpl extends AuctionService {
     for {
       session <- sessionFuture
       auctionRs <- session.executeAsync(auctionQuery).asScala
-      bids <- aggregateAll(session.executeAsync(bidsQuery).asScala, ArrayBuffer.empty, transformBid)
+      bids <- aggregateAll(session.executeAsync(bidsQuery(auctionIdUuid)).asScala, ArrayBuffer.empty, transformBid)
       auction <- transformAuctionResultSet(auctionRs, bids)
     } yield auction
   }
@@ -156,9 +169,6 @@ trait AuctionServiceImpl extends AuctionService {
   def bidInAuction(command: BidInAuction)(implicit traceId: TraceId): Future[Unit] = {
     val bidId = UUIDs.timeBased()
     val auctionId = UUID fromString command.auctionId
-    val fetchExistingBidsQuery = select().all()
-      .from("microservices", "bids")
-      .where(equal("auction_id", auctionId))
 
     val insertBidQuery = insertInto("microservices", "bids")
       .value("auction_id", auctionId)
@@ -180,9 +190,38 @@ trait AuctionServiceImpl extends AuctionService {
 
     for {
       session <- sessionFuture
-      _ <- verifyBidAmountIsHighest(session.executeAsync(fetchExistingBidsQuery).asScala)
+      _ <- verifyBidAmountIsHighest(session.executeAsync(bidsQuery(auctionId)).asScala)
       _ <- session.executeAsync(insertBidQuery).asScala // todo maybe check if applied?
     } yield ()
+  }
+
+
+  def payForAuction(auctionId: String, bidder: String, token: String)(implicit traceId: TraceId): Future[Unit] = {
+    val auctionIdUuid = UUID fromString auctionId
+    val bidsOrder = Ordering.by((_: Bid).amount)
+    for {
+      session <- sessionFuture
+      bids <- aggregateAll(session.executeAsync(bidsQuery(auctionIdUuid)).asScala, ArrayBuffer.empty, transformBid)
+      maxBid <- bids.reduceOption(bidsOrder.max).filter(_.bidder == bidder)
+        .map(successful).getOrElse(failed(NotActionWinner(bidder, auctionId)))
+      _ <- createBill(PayRequest(auctionId, maxBid.amount), token)
+    } yield ()
+  }
+
+  protected def createBill(billRequest: PayRequest, token: String)(implicit traceId: TraceId): Future[Unit] = {
+    implicit lazy val payRequestFormat: RootJsonFormat[PayRequest] = jsonFormat2(PayRequest)
+    val url = s"http://${Config.billingServiceContactPoint}/api/v1/billing"
+    val json = billRequest.toJson.compactPrint
+    val entity = HttpEntity(`application/json`, json)
+    val httpRequest = HttpRequest(POST, url)
+      .withHeaders(RawHeader("X-Trace-Id", traceId.id))
+      .withHeaders(RawHeader(AUTHORIZATION_KEYS.head, token))
+      .withEntity(entity)
+    Http().singleRequest(httpRequest).map { response =>
+      if (response.status.intValue() != 200) {
+        throw new BillingServiceError()
+      }
+    }
   }
 
   private def aggregateAll[A](future: Future[ResultSet], xs: ArrayBuffer[A], transform: Row => A): Future[List[A]] = {
@@ -199,10 +238,17 @@ trait AuctionServiceImpl extends AuctionService {
     }
   }
 
+  private def bidsQuery(auctionIdUuid: UUID) = {
+    select().all()
+      .from("microservices", "bids")
+      .where(equal("auction_id", auctionIdUuid))
+  }
+
   private def transformBid(row: Row) = Bid(
     bidId = row.getUUID("bid_id").toString,
     bidder = row.getString("bidder"),
     amount = BigDecimal(row.getDecimal("amount"))
   )
 
+  case class PayRequest(auction: String, amount: BigDecimal)
 }

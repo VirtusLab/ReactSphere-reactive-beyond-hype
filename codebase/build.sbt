@@ -197,6 +197,19 @@ lazy val billingServiceSecondarySync = (project in file("billing-service-seconda
     baseSync % compileTestScope
   )
 
+lazy val billingServiceSecondaryAsync = (project in file("billing-service-secondary-async"))
+  .settings(
+    commonSettings,
+    containerSettings,
+    name := "billing-service-secondary-async",
+    dockerCommands ++= installBashCommands
+  )
+  .enablePlugins(JavaAppPackaging, DockerPlugin, GitVersioning)
+  .dependsOn(
+    baseAsync % compileTestScope,
+    commons % compileTestScope
+  )
+
 lazy val paymentSystem = (project in file("payment-system"))
   .settings(
     commonSettings,
@@ -233,7 +246,7 @@ lazy val gatlingTests = (project in file("gatling-tests"))
   .dependsOn(commons % compileTestScope)
 
 lazy val syncServices = Seq(helloWorldSync, auctionHousePrimarySync, billingServiceSecondarySync)
-lazy val asyncServices = Seq(helloWorldAsync, auctionHousePrimaryAsync)
+lazy val asyncServices = Seq(helloWorldAsync, auctionHousePrimaryAsync, billingServiceSecondaryAsync)
 lazy val otherServices = Seq(paymentSystem)
 
 
@@ -248,7 +261,7 @@ lazy val root = (project in file("."))
     helloWorldSync, helloWorldAsync,
     baseSync, baseAsync,
     auctionHousePrimarySync, auctionHousePrimaryAsync,
-    billingServiceSecondarySync,
+    billingServiceSecondarySync, billingServiceSecondaryAsync,
     paymentSystem,
     gatlingTests
   )
