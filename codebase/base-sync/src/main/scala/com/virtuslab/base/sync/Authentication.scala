@@ -1,23 +1,18 @@
 package com.virtuslab.base.sync
 
 import com.virtuslab.identity.{TokenValidationResponse, ValidateTokenRequest}
-import com.virtuslab.{Config, RequestMetrics, TraceId}
+import com.virtuslab._
 import org.json4s.jackson.Serialization.{read, write}
 import org.scalatra.ScalatraBase
+
 import scalaj.http._
 
-trait Authentication extends ScalatraBase { this: RequestMetrics =>
+trait Authentication extends ScalatraBase with TraceIdSupport with HeadersSupport { this: RequestMetrics with Logging =>
 
   import org.json4s._
 
-  private val AUTHORIZATION_KEYS = Seq(
-    "Authorization",
-    "HTTP_AUTHORIZATION",
-    "X-HTTP_AUTHORIZATION",
-    "X_HTTP_AUTHORIZATION"
-  )
-
   private val identityUrl = s"http://${Config.identityServiceContactPoint}/api/v1/validate"
+  log.info(s"Identity url is: ${identityUrl}")
 
   protected implicit val jsonFormats: Formats = DefaultFormats
 
@@ -25,9 +20,9 @@ trait Authentication extends ScalatraBase { this: RequestMetrics =>
     val histogramTimer = requestsLatency.labels("authenticate").startTimer()
 
     val maybeUsername = getToken.flatMap { requestedToken =>
-      val body = write(ValidateTokenRequest(requestedToken))
+      val body = write(ValidateTokenRequest(requestedToken.value))
       val response = Http(identityUrl)
-        .headers(("X-Trace-Id", traceId.id) :: ("Content-Type", "application/json") :: Nil)
+        .headers(traceHeaders)
         .postData(body)
         .asString
 
@@ -40,15 +35,20 @@ trait Authentication extends ScalatraBase { this: RequestMetrics =>
 
     histogramTimer.observeDuration()
 
-    val username = maybeUsername getOrElse halt(status = 401)
+    val username = maybeUsername.getOrElse {
+      log.warn(s"Request cannot be authenticated, token is: ${getToken.getOrElse("<empty>")}")
+      halt(status = 401)
+    }
 
     fun(username)
   }
 
-  private def getToken: Option[String] = {
+  implicit protected def getToken: Option[AuthToken] = {
     AUTHORIZATION_KEYS.find(k => Option(request.getHeader(k)).isDefined)
       .map(request.getHeader(_).trim.split(" ", 2).map(_.trim))
       .find(arr => arr.length == 2 && arr(0).equalsIgnoreCase("bearer"))
-      .map(_(1))
+      .map { arr =>
+        AuthToken(arr(1))
+      }
   }
 }

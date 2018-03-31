@@ -1,8 +1,9 @@
 import java.lang.Thread.sleep
 
-import $file.display
+import $file.^.common.display
 import $file.tectonic
 import $file.vars
+
 import ammonite.ops._
 import display.ProgressBar
 import tectonic._

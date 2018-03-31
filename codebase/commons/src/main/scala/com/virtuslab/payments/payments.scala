@@ -1,5 +1,5 @@
 package com.virtuslab.payments
 
-object PaymentModel {
+package object payments {
   case class PaymentRequest(payer: String, payee: String, amount: Int)
 }

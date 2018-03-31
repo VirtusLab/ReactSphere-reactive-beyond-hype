@@ -7,16 +7,16 @@
 // 7. Deploy all microservices and wait for them to be up
 // 8. Deploy monitoring
 
-import $file.tectonic
-import $file.deployments
-import $file.display
-import $file.vars
-import $file.build
+import $file.common.display
+import $file.common.build
+import $file.tectonic.tectonic
+import $file.tectonic.deployments
+import $file.tectonic.vars
 
 import tectonic._
 import deployments._
-import display._
 import vars._
+import display._
 import build._
 
 implicit val progressBar = ProgressBar(System.out, "START", "Starting setup...")

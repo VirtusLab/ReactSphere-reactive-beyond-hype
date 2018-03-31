@@ -1,7 +1,7 @@
 package com.virtuslab.payment
 
 import com.virtuslab.base.sync.BaseServletTest
-import com.virtuslab.payments.PaymentModel.PaymentRequest
+import com.virtuslab.payments.payments.PaymentRequest
 import org.json4s.jackson.Serialization.write
 import org.scalatra._
 import org.scalatra.test.JettyContainer

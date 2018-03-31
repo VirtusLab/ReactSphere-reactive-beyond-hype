@@ -1,6 +1,7 @@
+import $file.^.common.display
 import $file.tectonic
-import $file.display
 import $file.deployments
+
 import tectonic._
 import deployments._
 import display.ProgressBar
