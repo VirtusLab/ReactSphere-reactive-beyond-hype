@@ -13,7 +13,7 @@ import $file.tectonic.tectonic
 import $file.tectonic.deployments
 import $file.tectonic.vars
 
-import tectonic._
+import tectonic.tectonic._
 import deployments._
 import vars._
 import display._

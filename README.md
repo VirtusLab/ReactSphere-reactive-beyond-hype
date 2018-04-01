@@ -73,7 +73,7 @@ cd codebase
 Run ammonite script to set up docker registry in Tectonic cluster:
 
 ```bash
-amm infra/scripts/setup-docker-registry.sc
+amm infra/scripts/tectonic/setup-docker-registry.sc
 ```
 
 Docker Registry uses SSL with a self-signed certificate (present in `infra/certs`). While this script
@@ -103,7 +103,7 @@ docker push docker-registry.local/hello-world-async
 ```
 or
 ```bash
-docker push docker-registry.local/hello-world-async
+docker push docker-registry.local/hello-world-sync
 ```
 
 If you have in-cluster docker registry deployed you can just run this is `./sbt` console:
