@@ -6,12 +6,9 @@ import io.gatling.http.Predef.http
 
 class AuctionHouseSimulation extends Simulation with RandomHelper {
 
-
-  val baseUrl = s"http://${Config.serverHostPort}/api/${Config.apiVersion}/"
   val errorHandler = new ErrorHandler
 
   val httpConf = http
-    .baseURL(baseUrl) // Here is the root for all relative URLs
     .acceptHeader("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8") // Here are the common headers
     .acceptEncodingHeader("gzip, deflate")
     .acceptLanguageHeader("en-US,en;q=0.5")
@@ -37,6 +34,7 @@ class AuctionHouseSimulation extends Simulation with RandomHelper {
     }.exec(auctions.getAuction)
     .exec(auctions.bidInAuction)
     .exec(auctions.getAuctionWithBids)
+    .exec(auctions.payForAuction)
 
 
   setUp(

@@ -10,6 +10,7 @@ import org.json4s.jackson.Serialization.write
 
 class AuctionsActions(errorHandler: ErrorHandler) extends BaseActions(errorHandler) {
 
+  def url(path: String) =  s"http://${Config.auctionServiceHostPort}/api/${Config.apiVersion}/$path"
 
   protected val getAuctionUrl: Expression[String] = (session: Session) => {
     session(auctionsParam).asOption[Auctions]
@@ -19,14 +20,14 @@ class AuctionsActions(errorHandler: ErrorHandler) extends BaseActions(errorHandl
             errorHandler.raiseError("Empty auction list in session")
           }
           val auctionId = randSeqValue(auctions.auctions).auctionId
-          s"auctions/$auctionId"
+          url(s"auctions/$auctionId")
       }
       .getOrElse(errorHandler.raiseError("Auction list not found in gatling session"))
   }
 
   protected val bidInAuctionUrl: Expression[String] = (session: Session) => {
     session(selectedAuctionParam).asOption[AuctionViewResponse]
-      .map(a => s"auctions/${a.auctionId}/bids")
+      .map(a => url(s"auctions/${a.auctionId}/bids"))
       .getOrElse(errorHandler.raiseError("Auction not found in gatling session"))
   }
 
@@ -40,6 +41,11 @@ class AuctionsActions(errorHandler: ErrorHandler) extends BaseActions(errorHandl
       }.getOrElse(errorHandler.raiseError("Auction not found in gatling session"))
   }
 
+  protected val payForAuctionUrl: Expression[String] = (session: Session) => {
+    session(selectedAuctionParam).asOption[AuctionViewResponse]
+      .map(a => url(s"finalize/${a.auctionId}"))
+      .getOrElse(errorHandler.raiseError("Auction not found in gatling session"))
+  }
 
   def randAuction(category: String) = CreateAuctionRequest(category, randStr, randStr, randPosNum,
     parse(s"""{"$randStr": "$randStr"}"""))
@@ -47,7 +53,7 @@ class AuctionsActions(errorHandler: ErrorHandler) extends BaseActions(errorHandl
 
   def createAuction(category: String) = {
     http("create auction")
-      .post("auctions")
+      .post(url("auctions"))
       .withAuthHeaders()
       .body(StringBody(write(randAuction(category))))
       .check(
@@ -57,7 +63,7 @@ class AuctionsActions(errorHandler: ErrorHandler) extends BaseActions(errorHandl
 
   def listAuctions(category: String) = {
     http("list auctions")
-      .get("auctions")
+      .get(url("auctions"))
       .withAuthHeaders()
       .queryParam("category", category)
       .check(
@@ -92,6 +98,15 @@ class AuctionsActions(errorHandler: ErrorHandler) extends BaseActions(errorHandl
       .copy(commonAttributes = getAuctionBuilder.commonAttributes.copy(requestName = "get auction with bids"))
       .check(
         bodyString.transform(parse(_).extract[AuctionViewResponse].bids.size).greaterThanOrEqual(1)
+      )
+  }
+
+  def payForAuction = {
+    http("Pay for auction")
+      .post(payForAuctionUrl)
+      .withAuthHeaders()
+      .check(
+        status.in(200)
       )
   }
 }
