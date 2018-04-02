@@ -3,8 +3,7 @@
 
  # Reactive: Beyond Hype
 
-       by Lukasz Bialy, Marcin Zagrowski, Pawel Dolega @ VirtusLab 2018
-
+       by Lukasz Bialy, Marcin Zagorski, Pawel Dolega @ VirtusLab 2018
        Repo for presentation on ReactSphere: Reactive beyond hype
 
 ### Requirements (with install instructions:)

@@ -22,7 +22,7 @@ def printSplash(): Unit = {
       |  ░         ░  ░░ ░         ░ ░           ░    ░        ░  ░  ░░ ░                 ░  ░
       |       ░        ░ ░                          ░                 ░ ░
       |
-      |      by Lukasz Bialy, Marcin Zagrowski, Pawel Dolega @ VirtusLab 2018
+      |      by Lukasz Bialy, Marcin Zagorski, Pawel Dolega @ VirtusLab 2018
       |
     """.stripMargin
   )
