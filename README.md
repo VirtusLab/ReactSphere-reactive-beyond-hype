@@ -1,8 +1,11 @@
 [![Build Status](https://travis-ci.org/VirtusLab/ReactSphere-reactive-beyond-hype.svg)](https://travis-ci.org/VirtusLab/ReactSphere-reactive-beyond-hype)
 [![Coverage Status](https://coveralls.io/repos/github/VirtusLab/ReactSphere-reactive-beyond-hype/badge.svg)](https://coveralls.io/github/VirtusLab/ReactSphere-reactive-beyond-hype)
 
-# ReactSphere-reactive-beyond-hype
-Repo for presentation on ReactSphere: Reactive beyond hype
+ # Reactive: Beyond Hype
+
+       by Lukasz Bialy, Marcin Zagrowski, Pawel Dolega @ VirtusLab 2018
+
+       Repo for presentation on ReactSphere: Reactive beyond hype
 
 ### Requirements (with install instructions:)
  * ammonite ( tested on ver. 1.0.x, http://ammonite.io/#Ammonite-REPL )
@@ -20,11 +23,18 @@ Local setup with dockerized containers is extremely easy.
 
 For sync stack setup you run (you need to be in repo root directory):
 
-`amm infra/scripts/build-run-docker-sync.sc`
+`amm infra/scripts/build-run-docker.sc --stack sync`
 
-This will build code, wrap containers, run Cassandra and all services (sync ones) locally.
+For async you do:
 
-#### Tectonic local setup
+`amm infra/scripts/build-run-docker.sc --stack async`
+
+You have several options to run this script (e.g. with without test execution or container image re-publish) - just use ``amm infra/scripts/build-run-docker-sync.sc` 
+(without arguments) and it will print all the information you may need.
+
+This script will generally build code, wrap containers, run Cassandra and all services (sync or async ones) locally.
+
+#### Kubernetes local setup
 
 ##### Adjust VM memory sizes in Vagrantfile:
 
@@ -60,8 +70,18 @@ vagrant up
 ```
 2. Log into Tectonic Console @ `https://console.tectonicsandbox.com` using username `admin@example.com` and password `sandbox`
 3. Go to `https://console.tectonicsandbox.com/settings/profile`, click `Download Configuration` button, confirm sign in and then
-   download configuration file for kubectl, then move it to 
+   download configuration file for kubectl, then move it to indicated location.
 
+#### Tectonic local setup
+
+Tectonic local setup is very similar to bare Docker setup. Just use the script:
+
+`amm infra/scripts/build-run-kubernetes.sc --stack sync`
+
+Arguments & flags are exactly the same as the ones for docker setup (so you can switch between sync / async etc).
+ 
+---
+ 
 ### Testing microservices:
 ```
 cd codebase
@@ -73,7 +93,7 @@ cd codebase
 Run ammonite script to set up docker registry in Tectonic cluster:
 
 ```bash
-amm infra/scripts/tectonic/setup-docker-registry.sc
+amm infra/scripts/kubernetes/setup-docker-registry.sc
 ```
 
 Docker Registry uses SSL with a self-signed certificate (present in `infra/certs`). While this script
