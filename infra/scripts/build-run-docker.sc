@@ -6,9 +6,9 @@ import $file.common.splash
 import $file.common.vars
 import $file.docker.buildRunDocker
 
-import common.vars._
-import common.splash._
-import docker.buildRunDocker._
+import vars._
+import splash._
+import buildRunDocker._
 import ammonite.ops._
 
 @main

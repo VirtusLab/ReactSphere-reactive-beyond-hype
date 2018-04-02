@@ -53,7 +53,7 @@ spec:
     spec:
       containers:
         - name: auction-house-primary-async
-          image: docker-registry.local/auction-house-primary-async
+          image: quay.io/virtuslab/auction-house-primary-async
           resources:
             limits:
               memory: "192Mi"

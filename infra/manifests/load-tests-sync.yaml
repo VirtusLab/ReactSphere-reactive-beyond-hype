@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name: gatling
-        image: docker-registry.local/gatling-tests:latest
+        image: quay.io/virtuslab/gatling-tests:latest
         imagePullPolicy: Always
         # if using S3 remember to add env vars:
         # > AWS_ACCESS_KEY_ID
