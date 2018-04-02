@@ -1,0 +1,67 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: microservices
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-system
+  namespace: microservices
+spec:
+  selector:
+    app: payment-system
+  ports:
+    - name: http
+      protocol: TCP
+      port: 9000
+      targetPort: 9000
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 9000
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: payment-system
+  namespace: microservices
+  annotations:
+    kubernetes.io/ingress.class: "tectonic"
+    ingress.kubernetes.io/rewrite-target: /
+spec:
+  tls:
+  - hosts:
+      - payment-system.local
+  rules:
+  - host: payment-system.local
+    http:
+      paths:
+      - backend:
+          serviceName: payment-system
+          servicePort: 443
+        path: /
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: payment-system
+  namespace: microservices
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: payment-system
+        monitoring-group: microservices-metrics
+    spec:
+      containers:
+        - name: payment-system
+          image: docker-registry.local/payment-system
+          resources:
+            limits:
+              memory: "192Mi"
+          ports:
+            - containerPort: 9000
+            - containerPort: 9001

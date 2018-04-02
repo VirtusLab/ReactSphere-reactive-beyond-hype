@@ -1,8 +1,9 @@
 package com.virtuslab.billingsync
 
+import com.typesafe.scalalogging.Logger
 import com.virtuslab.billingsync.BillingService.{TransactionId, UserId}
 import com.virtuslab.payments.payments.PaymentRequest
-import com.virtuslab.{Config, HeadersSupport, TraceId}
+import com.virtuslab.{Config, HeadersSupport, Logging, TraceId}
 import org.json4s.jackson.Serialization.write
 import org.json4s.{DefaultFormats, Formats}
 
@@ -22,11 +23,14 @@ object BillingService {
   }
 }
 
-class BillingService extends HeadersSupport {
+class BillingService extends HeadersSupport with Logging {
 
   protected implicit val jsonFormats: Formats = DefaultFormats
 
-  private lazy val paymentSystemUrl = s"http://${Config.paymentSystemContactPoint}/api/v1/payment"
+  override val log = Logger(getClass.toString)
+
+  private val paymentSystemUrl = s"http://${Config.paymentSystemContactPoint}/api/v1/payment"
+  log.info(s"Payment system url is: ${paymentSystemUrl}")
 
   def performPayment(payer: UserId, payee: UserId, amount: Int)(implicit traceId: TraceId): Try[TransactionId] = {
     val body = write(PaymentRequest("me", "you", amount))
