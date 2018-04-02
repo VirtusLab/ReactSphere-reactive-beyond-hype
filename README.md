@@ -1,31 +1,11 @@
 [![Build Status](https://travis-ci.org/VirtusLab/ReactSphere-reactive-beyond-hype.svg)](https://travis-ci.org/VirtusLab/ReactSphere-reactive-beyond-hype)
 [![Coverage Status](https://coveralls.io/repos/github/VirtusLab/ReactSphere-reactive-beyond-hype/badge.svg)](https://coveralls.io/github/VirtusLab/ReactSphere-reactive-beyond-hype)
 
-  ██▀███  ▓█████ ▄▄▄       ▄████▄  ▄▄▄█████▓ ██▓ ██▒   █▓▓█████
- ▓██ ▒ ██▒▓█   ▀▒████▄    ▒██▀ ▀█  ▓  ██▒ ▓▒▓██▒▓██░   █▒▓█   ▀
- ▓██ ░▄█ ▒▒███  ▒██  ▀█▄  ▒▓█    ▄ ▒ ▓██░ ▒░▒██▒ ▓██  █▒░▒███
- ▒██▀▀█▄  ▒▓█  ▄░██▄▄▄▄██ ▒▓▓▄ ▄██▒░ ▓██▓ ░ ░██░  ▒██ █░░▒▓█  ▄
- ░██▓ ▒██▒░▒████▒▓█   ▓██▒▒ ▓███▀ ░  ▒██▒ ░ ░██░   ▒▀█░  ░▒████▒
- ░ ▒▓ ░▒▓░░░ ▒░ ░▒▒   ▓▒█░░ ░▒ ▒  ░  ▒ ░░   ░▓     ░ ▐░  ░░ ▒░ ░
-   ░▒ ░ ▒░ ░ ░  ░ ▒   ▒▒ ░  ░  ▒       ░     ▒ ░   ░ ░░   ░ ░  ░
-   ░░   ░    ░    ░   ▒   ░          ░       ▒ ░     ░░     ░
-    ░        ░  ░     ░  ░░ ░                ░        ░     ░  ░
-                          ░                          ░
-  ▄▄▄▄   ▓█████▓██   ██▓ ▒█████   ███▄    █ ▓█████▄     ██░ ██▓██   ██▓ ██▓███  ▓█████
- ▓█████▄ ▓█   ▀ ▒██  ██▒▒██▒  ██▒ ██ ▀█   █ ▒██▀ ██▌   ▓██░ ██▒▒██  ██▒▓██░  ██▒▓█   ▀
- ▒██▒ ▄██▒███    ▒██ ██░▒██░  ██▒▓██  ▀█ ██▒░██   █▌   ▒██▀▀██░ ▒██ ██░▓██░ ██▓▒▒███
- ▒██░█▀  ▒▓█  ▄  ░ ▐██▓░▒██   ██░▓██▒  ▐▌██▒░▓█▄   ▌   ░▓█ ░██  ░ ▐██▓░▒██▄█▓▒ ▒▒▓█  ▄
- ░▓█  ▀█▓░▒████▒ ░ ██▒▓░░ ████▓▒░▒██░   ▓██░░▒████▓    ░▓█▒░██▓ ░ ██▒▓░▒██▒ ░  ░░▒████▒
- ░▒▓███▀▒░░ ▒░ ░  ██▒▒▒ ░ ▒░▒░▒░ ░ ▒░   ▒ ▒  ▒▒▓  ▒     ▒ ░░▒░▒  ██▒▒▒ ▒▓▒░ ░  ░░░ ▒░ ░
- ▒░▒   ░  ░ ░  ░▓██ ░▒░   ░ ▒ ▒░ ░ ░░   ░ ▒░ ░ ▒  ▒     ▒ ░▒░ ░▓██ ░▒░ ░▒ ░      ░ ░  ░
-  ░    ░    ░   ▒ ▒ ░░  ░ ░ ░ ▒     ░   ░ ░  ░ ░  ░     ░  ░░ ░▒ ▒ ░░  ░░          ░
-  ░         ░  ░░ ░         ░ ░           ░    ░        ░  ░  ░░ ░                 ░  ░
-       ░        ░ ░                          ░                 ░ ░
+ # Reactive: Beyond Hype
 
-      by Lukasz Bialy, Marcin Zagrowski, Pawel Dolega @ VirtusLab 2018
+       by Lukasz Bialy, Marcin Zagrowski, Pawel Dolega @ VirtusLab 2018
 
-# ReactSphere-reactive-beyond-hype
-Repo for presentation on ReactSphere: Reactive beyond hype
+       Repo for presentation on ReactSphere: Reactive beyond hype
 
 ### Requirements (with install instructions:)
  * ammonite ( tested on ver. 1.0.x, http://ammonite.io/#Ammonite-REPL )
