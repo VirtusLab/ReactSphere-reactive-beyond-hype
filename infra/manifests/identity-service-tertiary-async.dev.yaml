@@ -7,20 +7,25 @@ metadata:
 apiVersion: v1
 kind: Service
 metadata:
-  name: auction-house-primary-sync
+  name: identity-service-tertiary-async
   namespace: microservices
 spec:
   selector:
-    app: auction-house-primary-sync
+    app: identity-service-tertiary-async
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+    - name: https
+      protocol: TCP
       port: 443
       targetPort: 8080
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: auction-house-primary-sync
+  name: identity-service-tertiary-async
   namespace: microservices
   annotations:
     kubernetes.io/ingress.class: "tectonic"
@@ -28,32 +33,32 @@ metadata:
 spec:
   tls:
   - hosts:
-      - auction-house-primary-sync.local
+      - identity-service-tertiary-async.local
   rules:
-  - host: auction-house-primary-sync.local
+  - host: identity-service-tertiary-async.local
     http:
       paths:
       - backend:
-          serviceName: auction-house-primary-sync
+          serviceName: identity-service-tertiary-async
           servicePort: 443
         path: /
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: auction-house-primary-sync
+  name: identity-service-tertiary-async
   namespace: microservices
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: auction-house-primary-sync
+        app: identity-service-tertiary-async
         monitoring-group: microservices-metrics
     spec:
       containers:
-        - name: auction-house-primary-sync
-          image: docker-registry.local/auction-house-primary-sync
+        - name: identity-service-tertiary-async
+          image: docker-registry.local/identity-service-tertiary-async
           resources:
             limits:
               memory: "192Mi"
@@ -65,7 +70,3 @@ spec:
               value: "8080"
             - name: CASSANDRA_CONTACT_POINT
               value: "cassandra-0.cassandra.databases.svc.cluster.local"
-            - name: BILLING_SERVICE_CONTACT_POINT
-              value: "billing-service-secondary-sync:8080"
-            - name: IDENTITY_SERVICE_CONTACT_POINT
-              value: "identity-service-tertiary-sync:8080"

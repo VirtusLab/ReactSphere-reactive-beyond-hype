@@ -152,7 +152,13 @@ def tearMicroservicesDown(apps: Seq[String])(implicit progressBar: ProgressBar):
 
   apps foreach { app =>
     progressBar show s"Tearing down $app"
-    % kubectl("delete", "--ignore-not-found", "-f", s"infra/manifests/$app.$env.yaml")
+    Try {
+      % kubectl("delete", "--ignore-not-found", "-f", s"infra/manifests/$app.$env.yaml")
+    }.recover {
+      case e => println("Error while deleting app but we continue further...")
+    }
+
+    println(s"Application ${app} destroyed")
   }
 
   progressBar.finishedNamespace()

@@ -61,5 +61,11 @@ spec:
             - containerPort: 8080
             - containerPort: 8081
           env:
+            - name: http_port
+              value: "8080"
             - name: CASSANDRA_CONTACT_POINT
               value: "cassandra-0.cassandra.databases.svc.cluster.local"
+            - name: BILLING_SERVICE_CONTACT_POINT
+              value: "billing-service-secondary-async:8080"
+            - name: IDENTITY_SERVICE_CONTACT_POINT
+              value: "identity-service-tertiary-async:8080"
