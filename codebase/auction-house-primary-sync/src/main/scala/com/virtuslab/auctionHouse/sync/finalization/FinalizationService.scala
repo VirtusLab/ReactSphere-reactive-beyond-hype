@@ -6,6 +6,7 @@ import com.virtuslab.billing.BillingRequest
 import org.json4s.{DefaultFormats, Formats}
 import org.json4s.jackson.Serialization.write
 
+import scala.util.{Failure, Success, Try}
 import scalaj.http.Http
 
 class FinalizationService extends TraceIdSupport with Logging with HeadersSupport {
@@ -17,7 +18,7 @@ class FinalizationService extends TraceIdSupport with Logging with HeadersSuppor
   private val billingUrl = s"http://${Config.billingServiceContactPoint}/api/v1/billing"
   log.info(s"Billing url is: ${billingUrl}")
 
-  def finalizeAuction()(implicit traceId: TraceId, authToken: Option[AuthToken]): Unit = {
+  def finalizeAuction()(implicit traceId: TraceId, authToken: Option[AuthToken]): Try[Unit] = {
     val body = write(BillingRequest("user1", "user2", 5000))
     val response = Http(billingUrl)
       .headers(traceHeaders ++ authHeaders)
@@ -26,8 +27,10 @@ class FinalizationService extends TraceIdSupport with Logging with HeadersSuppor
 
     if(response.is2xx) {
       log.info(s"Success payment fulfilled for user: xxxx")
+      Success(())
     } else {
       log.error(s"Billing request failed. Code: ${response.code}, msg: ${response.body}")
+      Failure(new Exception("Failed to finalize auction"))
     }
   }
 }

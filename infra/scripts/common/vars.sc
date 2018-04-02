@@ -1,3 +1,11 @@
+object StackType {
+  def fromString(name: String): StackType = name.trim.toLowerCase match {
+    case "sync" => SyncStack
+    case "async" => AsyncStack
+    case _ => throw new IllegalArgumentException(s"Unrecognized stack type: ${name}")
+  }
+}
+
 sealed trait StackType {
   def paradigm: String
 }
@@ -33,3 +41,7 @@ def apps = Seq(
 def backingServices = Seq(
   PAYMENT_SYSTEM -> PAYMENT_PORT
 )
+
+def env: String = sys.env.getOrElse("ENV", "dev")
+
+def paradigm: String = sys.env.getOrElse("PARADIGM", "async")

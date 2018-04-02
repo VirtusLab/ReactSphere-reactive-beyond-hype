@@ -24,9 +24,12 @@ class FinalizationServlet extends BaseServlet with Authentication {
       log.info(s"[${traceId.id}] Finalization triggered by '$username'.")
       timing("auctionFinalization") {
         val auctionId = params("id")
-        service.finalizeAuction()
-        Ok(s"Nice, auction [${auctionId}] finalized!")
-      }
+        service.finalizeAuction().map { _ =>
+          Ok(s"Nice, auction [${auctionId}] finalized!")
+        }.recover {
+          case e => InternalServerError(e.getMessage)
+        }
+      }.get
     }
   }
 }

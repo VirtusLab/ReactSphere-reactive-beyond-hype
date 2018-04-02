@@ -8,7 +8,8 @@ private def directoryToProjectName(directoryName: String) = {
   segments.head + segments.tail.map(_.capitalize).mkString
 }
 
-def buildStack(projects: Seq[String], localRepo: Boolean = false, test: Boolean = true)
+def buildStack(projects: Seq[String],
+               localRepo: Boolean = false, skipTests: Boolean = true, skipPublish: Boolean = true)
               (implicit progressBar: ProgressBar): Unit = {
   implicit val codebasePath = pwd / "codebase"
   progressBar stepInto "Build"
@@ -16,14 +17,18 @@ def buildStack(projects: Seq[String], localRepo: Boolean = false, test: Boolean 
   projects foreach { directory =>
     val project = directoryToProjectName(directory)
 
-    if(test) {
+    if(!skipTests) {
       progressBar show s"Testing ${project}..."
       % sbt("coverageOff", s"$project/test")
     }
 
-    progressBar show s"Publishing ${project}..."
-    % sbt("coverageOff", s"$project/docker:${publishTask(localRepo)}")
+    if(!skipPublish) {
+      progressBar show s"Publishing ${project}..."
+      % sbt("coverageOff", s"$project/docker:${publishTask(localRepo)}")
+    }
   }
+
+  progressBar.finishedNamespace()
 }
 
 private def publishTask(localRepo: Boolean) = if(localRepo) "publishLocal" else "publish"

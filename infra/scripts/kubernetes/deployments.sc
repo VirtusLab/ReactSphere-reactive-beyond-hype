@@ -1,13 +1,13 @@
 import java.lang.Thread.sleep
 
 import $file.^.common.display
+import $file.^.common.vars
 import $file.tectonic
-import $file.vars
 
 import ammonite.ops._
 import display.ProgressBar
-import tectonic._
 import vars._
+import tectonic._
 
 import scala.util.Try
 
@@ -47,13 +47,10 @@ def tearDockerRegistryDown(implicit progressBar: ProgressBar): Unit = {
 }
 
 def waitForDockerRegistry(implicit progressBar: ProgressBar): Unit = {
-  progressBar stepInto "Registry"
+  progressBar stepInto "Docker registry response"
   progressBar show "Waiting for registry to come online..."
 
-  var retries = 0
-  var keepTrying = true
-
-  while (keepTrying) {
+  val success = Stream.continually {
 
     val result = Try {
       %% curl(
@@ -63,13 +60,20 @@ def waitForDockerRegistry(implicit progressBar: ProgressBar): Unit = {
       )
     }
 
-    if (result.isSuccess) keepTrying = false
-    else {
-      retries += 1
-      sleep(2000)
-    }
+    result.isSuccess
+  }.zip {
+    Stream
+      .iterate(0)(_ + 1)
+  }.takeWhile { case (isSuccess, retries) =>
+      !(isSuccess || retries > 300)
+  }.foldLeft(true) { case (isSuccess, _) =>
+    isSuccess
+  }
 
-    if (retries > 300) throw new RuntimeException("Docker Registry did not start in expected time frame.")
+  if (!success) {
+    throw new RuntimeException("Docker Registry did not start in expected time frame.")
+  } else {
+    progressBar.finishedNamespace()
   }
 }
 
@@ -93,6 +97,8 @@ def tearCassandraDown(implicit progressBar: ProgressBar): Unit = {
 }
 
 def waitForCassandra(implicit progressBar: ProgressBar): Unit = {
+  progressBar.stepInto("Waiting for Cassandra")
+
   def cassandraClusterIsReady(output: String, awaitCount: Int): Boolean = {
     val lines = output.split("\n")
       .toIterator
@@ -117,19 +123,34 @@ def waitForCassandra(implicit progressBar: ProgressBar): Unit = {
       sleep(2000)
     } else keepTrying = false
 
-    if (retries > 150) throw new RuntimeException("Cassandra cluster did not start in expected time frame.")
+    if (retries > 150) {
+      throw new RuntimeException("Cassandra cluster did not start in expected time frame.")
+    }
   }
+
+  progressBar.finishedNamespace()
 }
 
 def runCassandraMigration(implicit progressBar: ProgressBar): Unit = {
+  progressBar.stepInto("Cassandra migration")
   progressBar show "Setting up Cassandra schema"
   % kubectl("apply", "-f", "infra/manifests/migration.cassandra.yaml")
+  progressBar.finishedNamespace()
 }
 
 def deployAll(apps: Seq[String])(implicit progressBar: ProgressBar): Unit = {
   apps foreach { app =>
-    progressBar show s"Deploying $app"
-    % kubectl("apply", "-f", s"infra/manifests/$app.$env.yaml")
+    progressBar.stepInto(s"Deploying app: ${app}")
+    progressBar.show(s"Deploying...")
+    Try {
+      % kubectl("apply", "-f", s"infra/manifests/$app.$env.yaml")
+    }.map { _ =>
+      progressBar.finishedNamespace()
+    }.recover {
+      case e =>
+        println("\t\t!!! Temporarily we allow these errors as YAML descriptors are not there yet")
+        progressBar.failed()
+    }
   }
 }
 

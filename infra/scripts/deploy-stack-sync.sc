@@ -1,8 +1,8 @@
 import $file.common.build
 import $file.common.display
-import $file.tectonic.deployments
-import $file.tectonic.tectonic
-import $file.tectonic.vars
+import $file.kubernetes.deployments
+import $file.kubernetes.tectonic
+import $file.common.vars
 
 import build._
 import deployments.deployAll

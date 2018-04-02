@@ -87,12 +87,17 @@ def provisionDockerDaemonConfiguration(implicit progressBar: ProgressBar): Unit 
 }
 
 def verifyKubectlConfiguration(implicit progressBar: ProgressBar): Unit = {
+  progressBar.stepInto("Verifying kubectl config")
+
   if (!kubectlCanConnectToTectonicCluster) {
     println("Kubectl can't connect to cluster! Possible problems:\n" +
       " * Is Tectonic up and running?\n" +
       " * Did you obtain kubectl configuration from Tectonic Console?")
     progressBar.failed()
     interp exit 1
+  } else {
+    println("Tectonic seems to be up & running")
+    progressBar.finishedNamespace()
   }
 }
 

@@ -1,7 +1,7 @@
 
 import $file.^.common.display
 import $file.^.common.build
-import $file.vars
+import $file.^.common.vars
 
 import build._
 import display._
@@ -10,11 +10,20 @@ import ammonite.ops._
 import ammonite.ops.ImplicitWd._
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, Promise}
-import scala.concurrent.ExecutionContext.Implicits.global
+import java.util.concurrent.Executors
+import scala.concurrent._
 import java.util.{Timer, TimerTask}
 import scala.util.Try
 
-def performSetup(implicit stackType: StackType): Unit = {
+implicit val ec = new ExecutionContext {
+  val threadPool = Executors.newFixedThreadPool(6)
+
+  def execute(runnable: Runnable) { threadPool.submit(runnable) }
+
+  def reportFailure(t: Throwable) { t.printStackTrace() }
+}
+
+def performSetup(skipTests: Boolean, skipPublish: Boolean)(implicit stackType: StackType): Unit = {
   implicit val progressBar = ProgressBar(System.out, "START", "Starting setup...")
 
   progressBar.start()
@@ -23,7 +32,7 @@ def performSetup(implicit stackType: StackType): Unit = {
   val appsInParadigm = apps.map { a => s"${a._1}-${stackType.paradigm}" -> a._2 } ++ backingServices
 
   // Tests and publishes sync/async services to local docker registry
-  buildPublishApps(appsInParadigm.map(_._1))
+  buildPublishApps(apps = appsInParadigm.map(_._1), skipTests = skipTests, skipPublish = skipPublish)
 
   // Sets up networking shared among containers
   val networkName = setupNetworking()
@@ -41,8 +50,9 @@ def performSetup(implicit stackType: StackType): Unit = {
   progressBar.finished()
 }
 
-private def buildPublishApps(apps: Seq[String])(implicit progressBar: ProgressBar, stackType: StackType): Unit = {
-  buildStack(apps, localRepo = true, test = false)
+private def buildPublishApps(apps: Seq[String], skipTests: Boolean, skipPublish: Boolean)
+                            (implicit progressBar: ProgressBar, stackType: StackType): Unit = {
+  buildStack(apps, localRepo = true, skipTests, skipPublish)
 }
 
 private def runCassandra(networkName: String)
@@ -63,8 +73,11 @@ private def runDockerImages(apps: Seq[(String, Int)], networkName: String)
   val envVariables = buildEnvVariables
 
   val startedApps = apps.map { case (app, port) =>
+    println(s"Running service: ${app} on port ${port}...")
+
     val res = %% docker("images", "--filter", s"reference=docker-registry.local/${app}:latest", "--format", "{{.ID}}")
     val imageId = res.out.string.trim
+    println(s"Image ID from ${app} is ${imageId}...")
 
     Future {
       % docker("run", "--rm", "-p", s"${port}:${port}", envVariables, "--name", app, "--network", networkName, imageId)
