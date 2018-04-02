@@ -9,7 +9,7 @@ import akka.http.scaladsl.model.{HttpEntity, HttpRequest}
 import akka.stream.Materializer
 import akka.util.ByteString
 import com.virtuslab.identity.{TokenValidationResponse, ValidateTokenRequest}
-import com.virtuslab.{Config, TraceId}
+import com.virtuslab.{BaseConfig, TraceId}
 import spray.json.DefaultJsonProtocol
 
 import scala.concurrent.Future.successful
@@ -27,7 +27,7 @@ trait IdentityHelpers extends DefaultJsonProtocol {
 
   protected implicit def executionContext: ExecutionContext
 
-  private val identityUrl = s"http://${Config.identityServiceContactPoint}/api/v1/validate"
+  private val identityUrl = s"http://${BaseConfig.identityServiceContactPoint}/api/v1/validate"
 
   def validateToken(token: String)(implicit traceId: TraceId): Future[Option[String]] = {
     val json = ValidateTokenRequest(token).toJson.compactPrint

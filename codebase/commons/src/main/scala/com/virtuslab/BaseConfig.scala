@@ -2,7 +2,7 @@ package com.virtuslab
 
 import com.typesafe.config.{Config => TypesafeConfig, ConfigFactory}
 
-object Config {
+trait BaseConfig {
   lazy val conf: TypesafeConfig = ConfigFactory.load()
 
   lazy val cassandraContactPoint: String = conf.getString("cassandra.contactPoint")
@@ -10,3 +10,4 @@ object Config {
   lazy val billingServiceContactPoint: String = conf.getString("billingService.contactPoint")
   lazy val paymentSystemContactPoint: String = conf.getString("paymentSystem.contactPoint")
 }
+object BaseConfig extends BaseConfig

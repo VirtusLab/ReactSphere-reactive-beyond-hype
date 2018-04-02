@@ -11,7 +11,7 @@ trait Authentication extends ScalatraBase with TraceIdSupport with HeadersSuppor
 
   import org.json4s._
 
-  private val identityUrl = s"http://${Config.identityServiceContactPoint}/api/v1/validate"
+  private val identityUrl = s"http://${BaseConfig.identityServiceContactPoint}/api/v1/validate"
   log.info(s"Identity url is: ${identityUrl}")
 
   protected implicit val jsonFormats: Formats = DefaultFormats

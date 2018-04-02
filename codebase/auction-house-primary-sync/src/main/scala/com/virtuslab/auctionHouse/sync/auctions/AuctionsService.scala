@@ -35,7 +35,7 @@ class AuctionsService extends TraceIdSupport with Logging with HeadersSupport {
   private val categoriesSet = Categories.toSet
   private implicit val jsonFormats: Formats = DefaultFormats
 
-  private val billingUrl = s"http://${Config.billingServiceContactPoint}/api/v1/billing"
+  private val billingUrl = s"http://${BaseConfig.billingServiceContactPoint}/api/v1/billing"
   log.info(s"Billing url is: ${billingUrl}")
 
   private def assertCategory(category: String): Unit = {

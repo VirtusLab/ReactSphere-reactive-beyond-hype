@@ -162,7 +162,9 @@ lazy val billingServiceSecondarySync = (project in file("billing-service-seconda
       containerSettings,
       name := "billing-service-secondary-sync",
       resolvers += Classpaths.typesafeReleases,
-      dockerCommands ++= installBashCommands
+      dockerCommands ++= installBashCommands,
+      libraryDependencies ++= Seq("com.amazonaws" % "aws-java-sdk" % "1.11.306")
+
     )
     .enablePlugins(ScalatraPlugin, JavaAppPackaging, DockerPlugin, GitVersioning)
   .dependsOn(
@@ -175,7 +177,9 @@ lazy val billingServiceSecondaryAsync = (project in file("billing-service-second
     commonSettings,
     containerSettings,
     name := "billing-service-secondary-async",
-    dockerCommands ++= installBashCommands
+    dockerCommands ++= installBashCommands,
+    libraryDependencies ++= Seq("com.amazonaws" % "aws-java-sdk" % "1.11.306",
+      "com.lightbend.akka" %% "akka-stream-alpakka-s3" % "0.18")
   )
   .enablePlugins(JavaAppPackaging, DockerPlugin, GitVersioning)
   .dependsOn(

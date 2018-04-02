@@ -1,12 +1,14 @@
 package com.virtuslab.billingsync
 
+import java.util.UUID
+
 import com.virtuslab.TraceId
 import com.virtuslab.base.sync.BaseServletTest
 import com.virtuslab.billingsync.BillingService.{TransactionId, UserId}
 import com.virtuslab.payments.payments.PaymentRequest
 import org.scalatra.{Ok, Unauthorized}
 
-import scala.util.Try
+import scala.util.{Success, Try}
 
 class BillingServletTest extends BaseServletTest(classOf[TestableBillingServlet]) {
 
@@ -39,9 +41,13 @@ class TestableBillingServlet extends BillingServlet {
 
   override def auth[T](fun: String => T)(implicit traceId: TraceId): T = fun("u2")
 
-  override val service = new BillingService {
+  override lazy val service = new BillingService {
     override def performPayment(paymentRequest: PaymentRequest)(implicit traceId: TraceId): Try[TransactionId] = {
       Try(TransactionId.fresh)
     }
+  }
+
+  override protected lazy val s3Service = new S3Service {
+    override def putInvoice(data: PaymentRequest): Try[String] = Success(UUID.randomUUID().toString)
   }
 }

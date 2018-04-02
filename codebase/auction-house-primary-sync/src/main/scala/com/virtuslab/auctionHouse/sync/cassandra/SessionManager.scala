@@ -2,13 +2,13 @@ package com.virtuslab.auctionHouse.sync.cassandra
 
 import com.datastax.driver.core.{Cluster, Session}
 import com.datastax.driver.mapping.{Mapper, MappingManager}
-import com.virtuslab.Config
+import com.virtuslab.BaseConfig
 
 trait SessionManager {
 
   protected lazy val cluster: Cluster =
     Cluster.builder()
-      .addContactPoint(Config.cassandraContactPoint)
+      .addContactPoint(BaseConfig.cassandraContactPoint)
       .build()
 
   val keyspace = "microservices"
