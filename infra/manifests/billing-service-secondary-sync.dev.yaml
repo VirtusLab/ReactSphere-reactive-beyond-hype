@@ -7,20 +7,25 @@ metadata:
 apiVersion: v1
 kind: Service
 metadata:
-  name: auction-house-primary-sync
+  name: billing-service-secondary-sync
   namespace: microservices
 spec:
   selector:
-    app: auction-house-primary-sync
+    app: billing-service-secondary-sync
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
+      port: 8090
+      targetPort: 8090
+    - name: https
+      protocol: TCP
       port: 443
-      targetPort: 8080
+      targetPort: 8090
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: auction-house-primary-sync
+  name: billing-service-secondary-sync
   namespace: microservices
   annotations:
     kubernetes.io/ingress.class: "tectonic"
@@ -28,42 +33,40 @@ metadata:
 spec:
   tls:
   - hosts:
-      - auction-house-primary-sync.local
+      - billing-service-secondary-sync.local
   rules:
-  - host: auction-house-primary-sync.local
+  - host: billing-service-secondary-sync.local
     http:
       paths:
       - backend:
-          serviceName: auction-house-primary-sync
+          serviceName: billing-service-secondary-sync
           servicePort: 443
         path: /
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: auction-house-primary-sync
+  name: billing-service-secondary-sync
   namespace: microservices
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: auction-house-primary-sync
+        app: billing-service-secondary-sync
         monitoring-group: microservices-metrics
     spec:
       containers:
-        - name: auction-house-primary-sync
-          image: docker-registry.local/auction-house-primary-sync
+        - name: billing-service-secondary-sync
+          image: docker-registry.local/billing-service-secondary-sync
           resources:
             limits:
               memory: "192Mi"
           ports:
-            - containerPort: 8080
-            - containerPort: 8081
+            - containerPort: 8090
+            - containerPort: 8091
           env:
-            - name: CASSANDRA_CONTACT_POINT
-              value: "cassandra-0.cassandra.databases.svc.cluster.local"
-            - name: BILLING_SERVICE_CONTACT_POINT
-              value: "billing-service-secondary-sync:8090"
             - name: IDENTITY_SERVICE_CONTACT_POINT
               value: "identity-service-tertiary-sync:8100"
+            - name: PAYMENT_SYSTEM_CONTACT_POINT
+              value: "payment-system:9000"

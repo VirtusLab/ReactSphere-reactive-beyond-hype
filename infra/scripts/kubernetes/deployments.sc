@@ -141,16 +141,9 @@ def runCassandraMigration(implicit progressBar: ProgressBar): Unit = {
 def deployAll(apps: Seq[String])(implicit progressBar: ProgressBar): Unit = {
   apps foreach { app =>
     progressBar.stepInto(s"Deploying app: ${app}")
-    progressBar.show(s"Deploying...")
-    Try {
-      % kubectl("apply", "-f", s"infra/manifests/$app.$env.yaml")
-    }.map { _ =>
-      progressBar.finishedNamespace()
-    }.recover {
-      case e =>
-        println("\t\t!!! Temporarily we allow these errors as YAML descriptors are not there yet")
-        progressBar.failed()
-    }
+    println(s"Deploying app: ${app}...")
+    % kubectl("apply", "-f", s"infra/manifests/$app.$env.yaml")
+    progressBar.finishedNamespace()
   }
 }
 

@@ -6,9 +6,9 @@ import $file.common.splash
 import $file.common.vars
 import $file.kubernetes.buildRunTectonic
 
-import common.splash._
-import common.vars._
-import kubernetes.buildRunTectonic._
+import splash._
+import vars._
+import buildRunTectonic._
 import ammonite.ops._
 
 @main
