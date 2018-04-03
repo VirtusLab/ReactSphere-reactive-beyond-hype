@@ -32,8 +32,8 @@ class BillingService extends HeadersSupport with Logging {
   private val paymentSystemUrl = s"http://${Config.paymentSystemContactPoint}/api/v1/payment"
   log.info(s"Payment system url is: ${paymentSystemUrl}")
 
-  def performPayment(payer: UserId, payee: UserId, amount: Int)(implicit traceId: TraceId): Try[TransactionId] = {
-    val body = write(PaymentRequest("me", "you", amount))
+  def performPayment(paymentRequest: PaymentRequest)(implicit traceId: TraceId): Try[TransactionId] = {
+    val body = write(paymentRequest)
     val response = Http(paymentSystemUrl)
       .headers(traceHeaders)
       .postData(body)

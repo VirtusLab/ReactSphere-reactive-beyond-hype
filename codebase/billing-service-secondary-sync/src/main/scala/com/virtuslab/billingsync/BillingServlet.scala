@@ -2,8 +2,7 @@ package com.virtuslab.billingsync
 
 import com.virtuslab.TraceId
 import com.virtuslab.base.sync.{Authentication, BaseServlet}
-import com.virtuslab.billing.BillingRequest
-import com.virtuslab.billingsync.BillingService.UserId
+import com.virtuslab.payments.payments.PaymentRequest
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.{InternalServerError, Ok}
 
@@ -19,9 +18,9 @@ class BillingServlet extends BaseServlet with Authentication {
     timing("billingProcessing") {
       implicit val traceId: TraceId = getTraceId
       auth { username =>
-        val billReq = parsedBody.extract[BillingRequest]
+        val billReq = parsedBody.extract[PaymentRequest]
 
-        service.performPayment(UserId(billReq.payee), UserId(billReq.payer), billReq.amount).map { r =>
+        service.performPayment(billReq).map { r =>
           Ok(r.id)
         }.recover {
           case e => InternalServerError(e.getMessage)

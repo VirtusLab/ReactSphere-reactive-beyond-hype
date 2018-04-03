@@ -84,7 +84,7 @@ class AuctionsServletTest extends BaseServletTest(classOf[TestableAuctionsServle
         get("/236927b7-ee42-43b0-a032-668aaba51ea3") {
           status should equal(Ok().status)
           val auction = parse(body).extract[AuctionViewResponse]
-          auction should equal(AuctionViewResponse("236927b7-ee42-43b0-a032-668aaba51ea3", "", "",
+          auction should equal(AuctionViewResponse("236927b7-ee42-43b0-a032-668aaba51ea3", "", "", "",
             parse("""{"some": "foo"}"""),
             Seq(ServletModels.Bid("236927b7-ee42-43b0-a032-668aaba51ea3", "id", "bidder", 12))))
         }
@@ -138,7 +138,7 @@ class TestableAuctionsServlet extends AuctionsServlet {
 
     override def getAuction(id: UUID): AuctionViewResponse = {
       if(id.toString == "236927b7-ee42-43b0-a032-668aaba51ea3") {
-        AuctionViewResponse(id.toString, "", "", parse("""{"some": "foo"}"""),
+        AuctionViewResponse(id.toString, "", "", "", parse("""{"some": "foo"}"""),
           Seq(ServletModels.Bid(id.toString, "id", "bidder", 12)))
       } else {
         ???
