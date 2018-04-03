@@ -14,7 +14,7 @@ spec:
     app: auction-house-primary-async
   ports:
     - protocol: TCP
-      port: 443
+      port: 80
       targetPort: 8080
 ---
 apiVersion: extensions/v1beta1
@@ -35,7 +35,7 @@ spec:
       paths:
       - backend:
           serviceName: auction-house-primary-async
-          servicePort: 443
+          servicePort: 80
         path: /
 ---
 apiVersion: extensions/v1beta1
@@ -66,6 +66,6 @@ spec:
             - name: CASSANDRA_CONTACT_POINT
               value: "cassandra-0.cassandra.databases.svc.cluster.local"
             - name: BILLING_SERVICE_CONTACT_POINT
-              value: "billing-service-secondary-async:8080"
+              value: "billing-service-secondary-async.microservices.svc.cluster.local"
             - name: IDENTITY_SERVICE_CONTACT_POINT
-              value: "identity-service-tertiary-async:8080"
+              value: "identity-service-tertiary-async.microservices.svc.cluster.local"

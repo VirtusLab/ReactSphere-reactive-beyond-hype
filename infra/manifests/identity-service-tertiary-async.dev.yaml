@@ -15,11 +15,7 @@ spec:
   ports:
     - name: http
       protocol: TCP
-      port: 8080
-      targetPort: 8080
-    - name: https
-      protocol: TCP
-      port: 443
+      port: 80
       targetPort: 8080
 ---
 apiVersion: extensions/v1beta1
@@ -40,7 +36,7 @@ spec:
       paths:
       - backend:
           serviceName: identity-service-tertiary-async
-          servicePort: 443
+          servicePort: 80
         path: /
 ---
 apiVersion: extensions/v1beta1
