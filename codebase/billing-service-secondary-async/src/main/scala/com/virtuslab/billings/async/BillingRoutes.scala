@@ -35,7 +35,7 @@ trait BillingRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
     optionalHeaderValueByName("X-Trace-Id") { maybeTraceId =>
       implicit val traceId: TraceId = extractTraceId(maybeTraceId)
       authenticate(traceId, authenticator) { username =>
-        path("billings") {
+        path("billing") {
           post {
             entity(as[PayRequest]) { request =>
               logger.info(s"[${traceId.id}] Received payment request '$request'.")
@@ -47,8 +47,10 @@ trait BillingRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
                 case Success(response) => {
                   if (response.status.isSuccess())
                     complete(OK)
-                  else
+                  else {
+                    logger.error(s"Unexpected response: $response")
                     complete(ServiceUnavailable, Error("Unexpected response from payment system"))
+                  }
                 }
                 case Failure(exception) =>
                   logger.error(s"[${traceId.id}] Error occurred while requesting payment", exception)

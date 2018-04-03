@@ -202,23 +202,25 @@ trait AuctionServiceImpl extends AuctionService with SprayJsonSupport with Defau
     for {
       session <- sessionFuture
       bids <- aggregateAll(session.executeAsync(bidsQuery(auctionIdUuid)).asScala, ArrayBuffer.empty, transformBid)
+      auction <- getAuction(auctionId)
       maxBid <- bids.reduceOption(bidsOrder.max).filter(_.bidder == bidder)
         .map(successful).getOrElse(failed(NotActionWinner(bidder, auctionId)))
-      _ <- createBill(PayRequest(auctionId, maxBid.amount), token)
+      _ <- createBill(PayRequest(bidder, auction.owner, maxBid.amount), token)
     } yield ()
   }
 
   protected def createBill(billRequest: PayRequest, token: String)(implicit traceId: TraceId): Future[Unit] = {
-    implicit lazy val payRequestFormat: RootJsonFormat[PayRequest] = jsonFormat2(PayRequest)
+    implicit lazy val payRequestFormat: RootJsonFormat[PayRequest] = jsonFormat3(PayRequest)
     val url = s"http://${Config.billingServiceContactPoint}/api/v1/billing"
     val json = billRequest.toJson.compactPrint
     val entity = HttpEntity(`application/json`, json)
     val httpRequest = HttpRequest(POST, url)
       .withHeaders(RawHeader("X-Trace-Id", traceId.id))
-      .withHeaders(RawHeader(AUTHORIZATION_KEYS.head, token))
+      .withHeaders(RawHeader(AUTHORIZATION_KEYS.head, s"bearer $token"))
       .withEntity(entity)
     Http().singleRequest(httpRequest).map { response =>
       if (response.status.intValue() != 200) {
+        logger.error(s"unexpected response: $response")
         throw new BillingServiceError()
       }
     }
@@ -250,5 +252,5 @@ trait AuctionServiceImpl extends AuctionService with SprayJsonSupport with Defau
     amount = BigDecimal(row.getDecimal("amount"))
   )
 
-  case class PayRequest(auction: String, amount: BigDecimal)
+  case class PayRequest(payer: String, payee: String, amount: BigDecimal)
 }
