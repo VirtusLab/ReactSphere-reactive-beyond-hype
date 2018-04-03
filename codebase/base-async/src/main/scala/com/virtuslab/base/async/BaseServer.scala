@@ -11,10 +11,12 @@ import io.prometheus.client.hotspot.DefaultExports
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext}
 
-trait BaseServer {
+abstract class BaseServer(defaultPort: Int = 8080) {
+
+  private val port = Option(System.getenv("http_port")).map(_.toInt).getOrElse(defaultPort)
 
   DefaultExports.initialize()
-  private val metricsServer = new HTTPServer(8081)
+  private val metricsServer = new HTTPServer(port + 1)
   protected def logger: Logger
 
   lazy implicit val system: ActorSystem = ActorSystem("auctionHouseServer")
@@ -24,9 +26,6 @@ trait BaseServer {
   def routes: Route
 
   def main(args: Array[String]) {
-
-    val port = Option(System.getProperty("http.port")).map(_.toInt).getOrElse(8080)
-
     Http().bindAndHandle(routes, "0.0.0.0", port)
 
     logger.info(s"Server online at http://0.0.0.0:$port/")

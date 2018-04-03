@@ -26,7 +26,8 @@ class FinalizationService extends TraceIdSupport with Logging with HeadersSuppor
       .asString
 
     if(response.is2xx) {
-      log.info(s"Success payment fulfilled for user: xxxx")
+      val transactionId = response.body
+      log.info(s"Success payment fulfilled for user: xxxx, transactionId: ${transactionId}")
       Success(())
     } else {
       log.error(s"Billing request failed. Code: ${response.code}, msg: ${response.body}")

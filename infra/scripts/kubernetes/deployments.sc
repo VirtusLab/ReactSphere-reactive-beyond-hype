@@ -141,16 +141,9 @@ def runCassandraMigration(implicit progressBar: ProgressBar): Unit = {
 def deployAll(apps: Seq[String])(implicit progressBar: ProgressBar): Unit = {
   apps foreach { app =>
     progressBar.stepInto(s"Deploying app: ${app}")
-    progressBar.show(s"Deploying...")
-    Try {
-      % kubectl("apply", "-f", s"infra/manifests/$app.$env.yaml")
-    }.map { _ =>
-      progressBar.finishedNamespace()
-    }.recover {
-      case e =>
-        println("\t\t!!! Temporarily we allow these errors as YAML descriptors are not there yet")
-        progressBar.failed()
-    }
+    println(s"Deploying app: ${app}...")
+    % kubectl("apply", "-f", s"infra/manifests/$app.$env.yaml")
+    progressBar.finishedNamespace()
   }
 }
 
@@ -159,7 +152,13 @@ def tearMicroservicesDown(apps: Seq[String])(implicit progressBar: ProgressBar):
 
   apps foreach { app =>
     progressBar show s"Tearing down $app"
-    % kubectl("delete", "--ignore-not-found", "-f", s"infra/manifests/$app.$env.yaml")
+    Try {
+      % kubectl("delete", "--ignore-not-found", "-f", s"infra/manifests/$app.$env.yaml")
+    }.recover {
+      case e => println("Error while deleting app but we continue further...")
+    }
+
+    println(s"Application ${app} destroyed")
   }
 
   progressBar.finishedNamespace()

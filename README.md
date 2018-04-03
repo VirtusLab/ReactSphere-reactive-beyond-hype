@@ -55,10 +55,9 @@ $worker_vm_memory = 4096
 8. Add line `172.17.4.201    billing-service-secondary-sync.local
 9. Add line `172.17.4.201    identity-service-tertiary-async.local
 10. Add line `172.17.4.201   identity-service-tertiary-sync.local
-11. Add line `172.17.4.201   payment-system-async.local
-12. Add line `172.17.4.201   payment-system-sync.local
+11. Add line `172.17.4.201   payment-system.local
 
-13. Save it
+12. Save it
 
 ##### Starting Tectonic Kubernetes local cluster
 

@@ -7,20 +7,21 @@ metadata:
 apiVersion: v1
 kind: Service
 metadata:
-  name: auction-house-primary-async
+  name: payment-system
   namespace: microservices
 spec:
   selector:
-    app: auction-house-primary-async
+    app: payment-system
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 80
       targetPort: 8080
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: auction-house-primary-async
+  name: payment-system
   namespace: microservices
   annotations:
     kubernetes.io/ingress.class: "tectonic"
@@ -28,32 +29,32 @@ metadata:
 spec:
   tls:
   - hosts:
-      - auction-house-primary-async.local
+      - payment-system.local
   rules:
-  - host: auction-house-primary-async.local
+  - host: payment-system.local
     http:
       paths:
       - backend:
-          serviceName: auction-house-primary-async
+          serviceName: payment-system
           servicePort: 80
         path: /
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: auction-house-primary-async
+  name: payment-system
   namespace: microservices
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: auction-house-primary-async
+        app: payment-system
         monitoring-group: microservices-metrics
     spec:
       containers:
-        - name: auction-house-primary-async
-          image: quay.io/virtuslab/auction-house-primary-async
+        - name: payment-system
+          image: docker-registry.local/payment-system
           resources:
             limits:
               memory: "192Mi"
@@ -63,9 +64,3 @@ spec:
           env:
             - name: http_port
               value: "8080"
-            - name: CASSANDRA_CONTACT_POINT
-              value: "cassandra-0.cassandra.databases.svc.cluster.local"
-            - name: BILLING_SERVICE_CONTACT_POINT
-              value: "billing-service-secondary-async.microservices.svc.cluster.local"
-            - name: IDENTITY_SERVICE_CONTACT_POINT
-              value: "identity-service-tertiary-async.microservices.svc.cluster.local"

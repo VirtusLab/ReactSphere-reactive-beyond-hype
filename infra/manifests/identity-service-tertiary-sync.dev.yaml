@@ -7,20 +7,21 @@ metadata:
 apiVersion: v1
 kind: Service
 metadata:
-  name: auction-house-primary-async
+  name: identity-service-tertiary-sync
   namespace: microservices
 spec:
   selector:
-    app: auction-house-primary-async
+    app: identity-service-tertiary-sync
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 80
       targetPort: 8080
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: auction-house-primary-async
+  name: identity-service-tertiary-sync
   namespace: microservices
   annotations:
     kubernetes.io/ingress.class: "tectonic"
@@ -28,32 +29,32 @@ metadata:
 spec:
   tls:
   - hosts:
-      - auction-house-primary-async.local
+      - identity-service-tertiary-sync.local
   rules:
-  - host: auction-house-primary-async.local
+  - host: identity-service-tertiary-sync.local
     http:
       paths:
       - backend:
-          serviceName: auction-house-primary-async
+          serviceName: identity-service-tertiary-sync
           servicePort: 80
         path: /
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: auction-house-primary-async
+  name: identity-service-tertiary-sync
   namespace: microservices
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: auction-house-primary-async
+        app: identity-service-tertiary-sync
         monitoring-group: microservices-metrics
     spec:
       containers:
-        - name: auction-house-primary-async
-          image: quay.io/virtuslab/auction-house-primary-async
+        - name: identity-service-tertiary-sync
+          image: docker-registry.local/identity-service-tertiary-sync
           resources:
             limits:
               memory: "192Mi"
@@ -65,7 +66,3 @@ spec:
               value: "8080"
             - name: CASSANDRA_CONTACT_POINT
               value: "cassandra-0.cassandra.databases.svc.cluster.local"
-            - name: BILLING_SERVICE_CONTACT_POINT
-              value: "billing-service-secondary-async.microservices.svc.cluster.local"
-            - name: IDENTITY_SERVICE_CONTACT_POINT
-              value: "identity-service-tertiary-async.microservices.svc.cluster.local"

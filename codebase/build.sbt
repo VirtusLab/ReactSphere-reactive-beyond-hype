@@ -218,13 +218,6 @@ lazy val gatlingTests = (project in file("gatling-tests"))
   .disablePlugins(CoverallsPlugin)
   .dependsOn(commons % compileTestScope)
 
-lazy val syncServices = Seq(auctionHousePrimarySync, identityServiceTertiarySync, billingServiceSecondarySync)
-lazy val asyncServices = Seq(auctionHousePrimaryAsync, identityServiceTertiaryAsync, billingServiceSecondaryAsync)
-lazy val otherServices = Seq(paymentSystem)
-
-
-val deployLocally = taskKey[Unit]("Published all services to local Docker repository")
-
 lazy val root = (project in file("."))
   .settings(
     commonSettings,
