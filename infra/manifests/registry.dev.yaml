@@ -26,7 +26,7 @@ spec:
     app: registry
   ports:
     - protocol: TCP
-      port: 443
+      port: 80
       targetPort: 5000
 ---
 apiVersion: extensions/v1beta1
@@ -49,7 +49,7 @@ spec:
       paths:
       - backend:
           serviceName: registry
-          servicePort: 443
+          servicePort: 80
         path: /
 ---
 apiVersion: extensions/v1beta1

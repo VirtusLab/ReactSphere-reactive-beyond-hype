@@ -156,33 +156,6 @@ lazy val identityServiceTertiarySync = (project in file("identity-service-tertia
     baseSync % compileTestScope
   )
 
-lazy val helloWorldSync = (project in file("hello-world-sync"))
-  .settings(
-    commonSettings,
-    containerSettings,
-    name := "hello-world-sync",
-    resolvers += Classpaths.typesafeReleases,
-    dockerCommands ++= installBashCommands
-  )
-  .enablePlugins(ScalatraPlugin, JavaAppPackaging, DockerPlugin, GitVersioning)
-  .dependsOn(
-    commons % compileTestScope,
-    baseSync % compileTestScope
-  )
-
-lazy val helloWorldAsync = (project in file("hello-world-async"))
-  .settings(
-    commonSettings,
-    containerSettings,
-    name := "hello-world-async",
-    dockerCommands ++= installBashCommands
-  )
-  .enablePlugins(JavaAppPackaging, DockerPlugin, GitVersioning)
-  .dependsOn(
-    baseAsync % compileTestScope,
-    commons % compileTestScope
-  )
-
 lazy val billingServiceSecondarySync = (project in file("billing-service-secondary-sync"))
     .settings(
       commonSettings,
@@ -251,7 +224,6 @@ lazy val root = (project in file("."))
     name := "beyond-the-hype-codebase"
   )
   .aggregate(
-    helloWorldSync, helloWorldAsync,
     baseSync, baseAsync,
     auctionHousePrimarySync, auctionHousePrimaryAsync,
     billingServiceSecondarySync, billingServiceSecondaryAsync,
