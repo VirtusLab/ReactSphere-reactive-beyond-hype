@@ -15,12 +15,8 @@ spec:
   ports:
     - name: http
       protocol: TCP
-      port: 8090
-      targetPort: 8090
-    - name: https
-      protocol: TCP
-      port: 443
-      targetPort: 8090
+      port: 80
+      targetPort: 8080
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -40,7 +36,7 @@ spec:
       paths:
       - backend:
           serviceName: billing-service-secondary-sync
-          servicePort: 443
+          servicePort: 80
         path: /
 ---
 apiVersion: extensions/v1beta1
@@ -63,10 +59,12 @@ spec:
             limits:
               memory: "192Mi"
           ports:
-            - containerPort: 8090
-            - containerPort: 8091
+            - containerPort: 8080
+            - containerPort: 8081
           env:
+            - name: http_port
+              value: "8080"
             - name: IDENTITY_SERVICE_CONTACT_POINT
-              value: "identity-service-tertiary-sync:8100"
+              value: "identity-service-tertiary-sync.microservices.svc.cluster.local"
             - name: PAYMENT_SYSTEM_CONTACT_POINT
-              value: "payment-system:9000"
+              value: "payment-system.microservices.svc.cluster.local"

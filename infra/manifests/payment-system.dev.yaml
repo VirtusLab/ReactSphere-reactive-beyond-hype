@@ -15,12 +15,8 @@ spec:
   ports:
     - name: http
       protocol: TCP
-      port: 9000
-      targetPort: 9000
-    - name: https
-      protocol: TCP
-      port: 443
-      targetPort: 9000
+      port: 80
+      targetPort: 8080
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -40,7 +36,7 @@ spec:
       paths:
       - backend:
           serviceName: payment-system
-          servicePort: 443
+          servicePort: 80
         path: /
 ---
 apiVersion: extensions/v1beta1
@@ -63,5 +59,8 @@ spec:
             limits:
               memory: "192Mi"
           ports:
-            - containerPort: 9000
-            - containerPort: 9001
+            - containerPort: 8080
+            - containerPort: 8081
+          env:
+            - name: http_port
+              value: "8080"
