@@ -3,11 +3,10 @@ import java.lang.Thread.sleep
 import $file.^.common.display
 import $file.^.common.vars
 import $file.tectonic
-
 import ammonite.ops._
 import display.ProgressBar
-import vars._
 import tectonic._
+import vars._
 
 import scala.util.Try
 
@@ -18,18 +17,16 @@ def deployDockerRegistry(implicit progressBar: ProgressBar): Unit = {
 
   if (tectonic.getPodCountInNamespace("docker", "app", "registry") != 1) {
     progressBar show "Deploying registry to cluster..."
-    % kubectl("apply", "-f", s"infra/manifests/registry.$env.yaml")
+    % kubectl("apply", "-f", s"infra/manifests/registry.dev.yaml")
 
     progressBar show "Waiting for registry to start..."
     sleep(5000)
 
-    if (env == "dev") {
-      progressBar show "Setting up docker daemon to trust in-cluster registry..."
+    progressBar show "Setting up docker daemon to trust in-cluster registry..."
 
-      provisionDockerDaemonConfiguration
+    provisionDockerDaemonConfiguration
 
-      rebootTectonic
-    }
+    rebootTectonic
   } else {
     println("Docker registry already deployed!")
   }
@@ -41,7 +38,7 @@ def deployDockerRegistry(implicit progressBar: ProgressBar): Unit = {
 def tearDockerRegistryDown(implicit progressBar: ProgressBar): Unit = {
   progressBar stepInto "Registry"
 
-  % kubectl("delete", "--ignore-not-found", "-f", s"infra/manifests/registry.$env.yaml")
+  % kubectl("delete", "--ignore-not-found", "-f", s"infra/manifests/registry.dev.yaml")
 
   progressBar.finishedNamespace()
 }
@@ -65,7 +62,7 @@ def waitForDockerRegistry(implicit progressBar: ProgressBar): Unit = {
     Stream
       .iterate(0)(_ + 1)
   }.takeWhile { case (isSuccess, retries) =>
-      !(isSuccess || retries > 300)
+    !(isSuccess || retries > 300)
   }.foldLeft(true) { case (isSuccess, _) =>
     isSuccess
   }
@@ -77,21 +74,25 @@ def waitForDockerRegistry(implicit progressBar: ProgressBar): Unit = {
   }
 }
 
-def deployCassandra(implicit progressBar: ProgressBar): Unit = {
+def setUpEbsStorageClass(): Unit = {
+  % kubectl("apply", "-f", s"infra/manifests/ebs-storageclass.prod.yaml")
+}
+
+def deployCassandra(implicit env: Environment, progressBar: ProgressBar): Unit = {
   if (tectonic.getPodCountInNamespace("databases", "app", "cassandra") != 2) {
     progressBar.show("Deploying Cassandra")
-    % kubectl("apply", "-f", s"infra/manifests/cassandra.$env.yaml")
+    % kubectl("apply", "-f", s"infra/manifests/cassandra.${env.name}.yaml")
     println("Deployed Cassandra!")
   } else {
     println("Cassandra already deployed!")
   }
 }
 
-def tearCassandraDown(implicit progressBar: ProgressBar): Unit = {
+def tearCassandraDown(implicit env: Environment, progressBar: ProgressBar): Unit = {
   progressBar stepInto "Cassandra"
   progressBar show "Tearing Cassandra cluster down"
 
-  % kubectl("delete", "--ignore-not-found", "-f", s"infra/manifests/cassandra.$env.yaml")
+  % kubectl("delete", "--ignore-not-found", "-f", s"infra/manifests/cassandra.${env.name}.yaml")
 
   progressBar.finishedNamespace()
 }
@@ -138,27 +139,27 @@ def runCassandraMigration(implicit progressBar: ProgressBar): Unit = {
   progressBar.finishedNamespace()
 }
 
-def deployAll(apps: Seq[String])(implicit progressBar: ProgressBar): Unit = {
+def deployAll(apps: Seq[String])(implicit env: Environment, progressBar: ProgressBar): Unit = {
   apps foreach { app =>
-    progressBar.stepInto(s"Deploying app: ${app}")
-    println(s"Deploying app: ${app}...")
-    % kubectl("apply", "-f", s"infra/manifests/$app.$env.yaml")
+    progressBar.stepInto(s"Deploying app: $app")
+    println(s"Deploying app: $app...")
+    % kubectl("apply", "-f", s"infra/manifests/$app.${env.name}.yaml")
     progressBar.finishedNamespace()
   }
 }
 
-def tearMicroservicesDown(apps: Seq[String])(implicit progressBar: ProgressBar): Unit = {
+def tearMicroservicesDown(apps: Seq[String])(implicit env: Environment, progressBar: ProgressBar): Unit = {
   progressBar stepInto "Microservices"
 
   apps foreach { app =>
     progressBar show s"Tearing down $app"
     Try {
-      % kubectl("delete", "--ignore-not-found", "-f", s"infra/manifests/$app.$env.yaml")
+      % kubectl("delete", "--ignore-not-found", "-f", s"infra/manifests/$app.${env.name}.yaml")
     }.recover {
       case e => println("Error while deleting app but we continue further...")
     }
 
-    println(s"Application ${app} destroyed")
+    println(s"Application $app destroyed")
   }
 
   progressBar.finishedNamespace()

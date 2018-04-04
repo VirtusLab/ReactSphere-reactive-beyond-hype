@@ -12,7 +12,8 @@ import build._
 
 
 def performSetup(skipTests: Boolean, skipPublish: Boolean)(implicit stackType: StackType): Unit = {
-  implicit val progressBar = ProgressBar(System.out, "START", "Starting Tectonic cluaster setup...")
+  implicit val progressBar = ProgressBar(System.out, "START", "Starting Tectonic cluster setup...")
+  implicit val env = Dev
   progressBar.start()
 
   // 1. Check tectonic is online and accessible with kubectl
@@ -26,7 +27,12 @@ def performSetup(skipTests: Boolean, skipPublish: Boolean)(implicit stackType: S
 
   // 4. Build & test whole stack locally, publish to in-cluster registry
   val appsInParadigm = apps.map { a => s"${a._1}-${stackType.paradigm}" -> a._2 } ++ backingServices
-  buildStack(projects = appsInParadigm.map(_._1), skipTests = skipTests, skipPublish = skipPublish)
+  buildStack(
+    projects = appsInParadigm.map(_._1),
+    skipTests = skipTests,
+    skipPublish = skipPublish,
+    registry = Local
+  )
 
   // 5. Deploy cassandra to Tectonic cluster and wait until it's completely up
   deployCassandra

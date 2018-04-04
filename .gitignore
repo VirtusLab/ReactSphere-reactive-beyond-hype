@@ -106,3 +106,9 @@ tectonic-1.7.5/provisioning/tectonic/tls/service-account.pub
 tectonic-1.7.5/provisioning/worker.ign.merged
 
 cassandra_data/
+
+.terraform/
+pull_secret.json
+license.txt
+terraform.tfstate
+terraform.tfstate.backup

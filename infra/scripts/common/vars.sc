@@ -42,6 +42,26 @@ def backingServices = Seq(
   PAYMENT_SYSTEM -> PAYMENT_PORT
 )
 
-def env: String = sys.env.getOrElse("ENV", "dev")
+sealed trait Environment {
+  def name: String
+}
 
-def paradigm: String = sys.env.getOrElse("PARADIGM", "async")
+case object Dev extends Environment {
+  def name: String = "dev"
+}
+
+case object Prod extends Environment {
+  def name: String = "prod"
+}
+
+sealed trait Registry {
+  def value: String
+}
+
+case object Local extends Registry {
+  def value: String = "docker-registry.local"
+}
+
+case object Quay extends Registry {
+  def value: String = "quay.io/virtuslab"
+}
