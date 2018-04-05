@@ -46,7 +46,7 @@
 					},
 					{
 						"key": "Authorization",
-						"value": "Bearer {{auctionHouseAuthToken}}"
+						"value": "Bearer {{identityToken}}"
 					}
 				],
 				"body": {
@@ -96,7 +96,7 @@
 					},
 					{
 						"key": "Authorization",
-						"value": "Bearer {{auctionHouseAuthToken}}"
+						"value": "Bearer {{identityToken}}"
 					}
 				],
 				"body": {
@@ -140,7 +140,7 @@
 					},
 					{
 						"key": "Authorization",
-						"value": "Bearer {{auctionHouseAuthToken}}"
+						"value": "Bearer {{identityToken}}"
 					}
 				],
 				"body": {
@@ -185,7 +185,7 @@
 					},
 					{
 						"key": "Authorization",
-						"value": "Bearer {{auctionHouseAuthToken}}"
+						"value": "Bearer {{identityToken}}"
 					}
 				],
 				"body": {

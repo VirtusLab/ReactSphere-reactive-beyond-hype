@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "03fbba4d-d93b-4f24-94aa-2597d894169e",
+		"_postman_id": "38efb20a-f772-43b2-b9fc-dcdd82f52e07",
 		"name": "ReactSphere::IdentityService",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -11,11 +11,11 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "7702b48a-8d1e-44a2-9ec1-551324cdea50",
+						"id": "f62cb866-f757-4d03-b630-cd4ee95beeba",
 						"type": "text/javascript",
 						"exec": [
 							"var jsonData = JSON.parse(responseBody)",
-							"postman.setEnvironmentVariable(\"auctionHouseAuthToken\", jsonData.token);"
+							"pm.globals.set(\"identityToken\", jsonData.token);"
 						]
 					}
 				}
@@ -107,7 +107,10 @@
 			"request": {
 				"method": "GET",
 				"header": [],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"url": {
 					"raw": "{{host}}/_status",
 					"host": [

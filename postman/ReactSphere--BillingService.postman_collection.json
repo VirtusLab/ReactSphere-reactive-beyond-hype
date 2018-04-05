@@ -1,0 +1,93 @@
+{
+	"info": {
+		"_postman_id": "f016e331-4145-4c1a-808b-96fb22d24c6f",
+		"name": "ReactSphere::BillingService",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Pay for an auction",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "b08da75b-46c7-499b-835a-4deca6842616",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{identityToken}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"payer\":\"testPayer\",\"payee\":\"testPayee\",\"amount\":23.50}\n"
+				},
+				"url": {
+					"raw": "{{host}}/api/v1/billing",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"billing"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Status",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "{{host}}/_status",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"_status"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "fa709046-f704-4e6e-96d1-ece09bfc10b3",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "82b60e36-1a95-4ea5-86a4-b0a0d0cc23be",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
