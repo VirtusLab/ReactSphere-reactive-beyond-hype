@@ -51,7 +51,13 @@ def performSetup(skipTests: Boolean, skipPublish: Boolean)(implicit stackType: S
 
 private def buildPublishApps(apps: Seq[String], skipTests: Boolean, skipPublish: Boolean)
                             (implicit progressBar: ProgressBar, stackType: StackType): Unit = {
-  buildStack(apps, localRepo = true, skipTests, skipPublish)
+  buildStack(
+    apps,
+    localRepo = true,
+    skipTests = skipTests,
+    skipPublish = skipPublish,
+    registry = Local
+  )
 }
 
 private def runCassandra(networkName: String)

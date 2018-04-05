@@ -1,0 +1,67 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: microservices
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auction-house-primary-async
+  namespace: microservices
+spec:
+  selector:
+    app: auction-house-primary-async
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: auction-house-primary-async
+  namespace: microservices
+  annotations:
+    kubernetes.io/ingress.class: "tectonic"
+    ingress.kubernetes.io/rewrite-target: /
+spec:
+  tls:
+  - hosts:
+      - auctions.beyondthehype.pl
+  rules:
+  - host: auctions.beyondthehype.pl
+    http:
+      paths:
+      - backend:
+          serviceName: auction-house-primary-async
+          servicePort: 80
+        path: /
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: auction-house-primary-async
+  namespace: microservices
+spec:
+  replicas: 1 #todo replicas
+  template:
+    metadata:
+      labels:
+        app: auction-house-primary-async
+        monitoring-group: microservices-metrics
+    spec:
+      containers:
+        - name: auction-house-primary-async
+          image: quay.io/virtuslab/auction-house-primary-async
+          resources:
+            limits:
+              memory: "384Mi"
+          ports:
+            - containerPort: 8080
+            - containerPort: 8081
+          env:
+            - name: CASSANDRA_CONTACT_POINT
+              value: "cassandra-0.cassandra.databases.svc.cluster.local"
+            - name: IDENTITY_CONTACT_POINT
+              value: "identity-service-tertiary-async.microservices.svc.cluster.local"
