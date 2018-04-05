@@ -27,10 +27,11 @@ object ServletModels {
   object Bid {
     def apply(b: cassandra.Bid): Bid = Bid(b.auction_id.toString, b.bid_id.toString, b.bidder, b.amount)
   }
-  case class AuctionViewResponse(auctionId: String, title: String, description: String, details: JValue, bids: Seq[Bid])
+  case class AuctionViewResponse(auctionId: String, owner: String, title: String, description: String, details: JValue,
+                                 bids: Seq[Bid])
   object AuctionViewResponse {
     def apply(a: AuctionView, bids: Seq[cassandra.Bid]): AuctionViewResponse = {
-      new AuctionViewResponse(a.auction_id.toString, a.title, a.description, parse(a.details), bids.map(Bid(_)))
+      new AuctionViewResponse(a.auction_id.toString, a.owner, a.title, a.description, parse(a.details), bids.map(Bid(_)))
     }
   }
   case class BidRequest(amount: BigDecimal)

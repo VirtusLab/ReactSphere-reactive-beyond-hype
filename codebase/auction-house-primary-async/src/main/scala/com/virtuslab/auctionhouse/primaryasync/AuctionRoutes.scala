@@ -81,7 +81,7 @@ trait AuctionRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
 
                   onComplete(payForAuction(auctionId, username, token)) {
                     case Success(_) =>
-                      logger.info(s"[${traceId.id}] Added bid for auction '$auctionId'.")
+                      logger.info(s"[${traceId.id}] Finalization triggered by '$username'.")
                       histogramTimer.observeDuration()
                       complete(OK)
 

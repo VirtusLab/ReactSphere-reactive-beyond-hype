@@ -5,6 +5,7 @@ import com.datastax.driver.core.utils.UUIDs
 import com.typesafe.scalalogging.Logger
 import com.virtuslab.auctionhouse.cassandra.CassandraIntegrationTest
 import com.virtuslab.TraceId
+import com.virtuslab.payments.payments.PaymentRequest
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{GivenWhenThen, Matchers, OptionValues, WordSpec}
 import spray.json.{JsArray, JsObject, JsString}
@@ -23,7 +24,7 @@ class AuctionServiceIntegrationTest extends WordSpec with Matchers with ScalaFut
 
   override protected implicit def system: ActorSystem = ???
 
-  override protected def createBill(billRequest: PayRequest, token: String)(implicit traceId: TraceId): Future[Unit] = Future.successful()
+  override protected def createBill(billRequest: PaymentRequest, token: String)(implicit traceId: TraceId): Future[Unit] = Future.successful()
 
   "Auction service" should {
 

@@ -17,6 +17,7 @@ import com.datastax.driver.core.utils.UUIDs
 import com.datastax.driver.core.{ResultSet, Row, Session}
 import com.typesafe.scalalogging.Logger
 import com.virtuslab.cassandra.CassandraClient
+import com.virtuslab.payments.payments.PaymentRequest
 import com.virtuslab.{Config, HeadersSupport, TraceId}
 import spray.json._
 
@@ -90,6 +91,8 @@ trait AuctionServiceImpl extends AuctionService with SprayJsonSupport with Defau
   protected def logger: Logger
 
   private lazy val sessionFuture: Future[Session] = getSessionAsync
+
+  private implicit lazy val payRequestFormat: RootJsonFormat[PaymentRequest] = jsonFormat3(PaymentRequest)
 
   def createAuction(command: CreateAuction)(implicit traceId: TraceId): Future[String] = {
     val auctionId = UUIDs.random()
@@ -197,28 +200,26 @@ trait AuctionServiceImpl extends AuctionService with SprayJsonSupport with Defau
 
 
   def payForAuction(auctionId: String, bidder: String, token: String)(implicit traceId: TraceId): Future[Unit] = {
-    val auctionIdUuid = UUID fromString auctionId
     val bidsOrder = Ordering.by((_: Bid).amount)
     for {
-      session <- sessionFuture
-      bids <- aggregateAll(session.executeAsync(bidsQuery(auctionIdUuid)).asScala, ArrayBuffer.empty, transformBid)
-      maxBid <- bids.reduceOption(bidsOrder.max).filter(_.bidder == bidder)
+      auction <- getAuction(auctionId)
+      maxBid <- auction.bids.reduceOption(bidsOrder.max).filter(_.bidder == bidder)
         .map(successful).getOrElse(failed(NotActionWinner(bidder, auctionId)))
-      _ <- createBill(PayRequest(auctionId, maxBid.amount), token)
+      _ <- createBill(PaymentRequest(bidder, auction.owner, maxBid.amount), token)
     } yield ()
   }
 
-  protected def createBill(billRequest: PayRequest, token: String)(implicit traceId: TraceId): Future[Unit] = {
-    implicit lazy val payRequestFormat: RootJsonFormat[PayRequest] = jsonFormat2(PayRequest)
+  protected def createBill(billRequest: PaymentRequest, token: String)(implicit traceId: TraceId): Future[Unit] = {
     val url = s"http://${Config.billingServiceContactPoint}/api/v1/billing"
     val json = billRequest.toJson.compactPrint
     val entity = HttpEntity(`application/json`, json)
     val httpRequest = HttpRequest(POST, url)
       .withHeaders(RawHeader("X-Trace-Id", traceId.id))
-      .withHeaders(RawHeader(AUTHORIZATION_KEYS.head, token))
+      .withHeaders(RawHeader(AUTHORIZATION_KEYS.head, s"bearer $token"))
       .withEntity(entity)
     Http().singleRequest(httpRequest).map { response =>
       if (response.status.intValue() != 200) {
+        logger.error(s"unexpected response: $response")
         throw new BillingServiceError()
       }
     }
@@ -249,6 +250,4 @@ trait AuctionServiceImpl extends AuctionService with SprayJsonSupport with Defau
     bidder = row.getString("bidder"),
     amount = BigDecimal(row.getDecimal("amount"))
   )
-
-  case class PayRequest(auction: String, amount: BigDecimal)
 }

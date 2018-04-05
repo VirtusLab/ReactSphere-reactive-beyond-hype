@@ -125,7 +125,8 @@ object AuctionsActions {
 
   case class Bid(bidId: String, bidder: String, amount: BigDecimal)
 
-  case class AuctionViewResponse(auctionId: String, title: String, description: String, details: JValue, bids: Seq[Bid])
+  case class AuctionViewResponse(auctionId: String, owner: String, title: String, description: String, details: JValue,
+                                 bids: Seq[Bid])
 
   case class BidRequest(amount: BigDecimal)
 
