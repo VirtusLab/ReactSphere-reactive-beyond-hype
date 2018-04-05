@@ -1,4 +1,4 @@
-import $file.aws.route53
-import route53.createSubdomain
+import $file.kubernetes.tectonic
+import tectonic._
 
-createSubdomain("identity")
+println(getNodes)

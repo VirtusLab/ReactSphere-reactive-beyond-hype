@@ -51,6 +51,8 @@ spec:
         app: auction-house-primary-async
         monitoring-group: microservices-metrics
     spec:
+      nodeSelector:
+        nodetype: microservices
       containers:
         - name: auction-house-primary-async
           image: quay.io/virtuslab/auction-house-primary-async
@@ -61,7 +63,11 @@ spec:
             - containerPort: 8080
             - containerPort: 8081
           env:
+            - name: http_port
+              value: "8080"
             - name: CASSANDRA_CONTACT_POINT
               value: "cassandra-0.cassandra.databases.svc.cluster.local"
-            - name: IDENTITY_CONTACT_POINT
+            - name: BILLING_SERVICE_CONTACT_POINT
+              value: "billing-service-secondary-async.microservices.svc.cluster.local"
+            - name: IDENTITY_SERVICE_CONTACT_POINT
               value: "identity-service-tertiary-async.microservices.svc.cluster.local"

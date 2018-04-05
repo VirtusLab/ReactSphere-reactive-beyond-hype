@@ -125,3 +125,37 @@ def getPodNamesInNamespace(namespace: String, label: String, selector: String): 
 
   pods.out.string.stripPrefix("'").stripSuffix("'").split(" ")
 }
+
+case class Nodes(master: String, workers: Vector[String])
+
+case object MasterNodeIsMissing extends RuntimeException("Tectonic master node is missing!")
+
+def getNodes: Nodes = {
+  implicit val wd: Path = pwd
+  val nodes = %%kubectl(
+    "get", "nodes"
+  )
+
+  val nodeLineStrings = nodes.out.string.split("\n").drop(1) // drop labels line
+  val nodeLineValues = nodeLineStrings.map(_.split(" ").filter(_ != "").map(_.trim))
+
+  val master = nodeLineValues.find(_(2) == "master").getOrElse(throw MasterNodeIsMissing)(0)
+  val workers = nodeLineValues.filter(_(2) == "node").map(_(0))
+
+  Nodes(master, workers.toVector)
+}
+
+def tagNodes(): Unit = {
+  implicit val wd: Path = pwd
+
+  val nodes: Nodes = getNodes
+  val (dbNodes, appNodes) = nodes.workers.splitAt(1) // single node
+
+  dbNodes foreach { node =>
+    %kubectl("label", "nodes", node, "nodetype=datastore")
+  }
+
+  appNodes foreach { node =>
+    %kubectl("label", "nodes", node, "nodetype=microservices")
+  }
+}

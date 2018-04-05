@@ -51,6 +51,8 @@ spec:
         app: identity-service-tertiary-sync
         monitoring-group: microservices-metrics
     spec:
+      nodeSelector:
+        nodetype: microservices
       containers:
         - name: identity-service-tertiary-sync
           image: quay.io/virtuslab/identity-service-tertiary-sync
@@ -61,5 +63,7 @@ spec:
             - containerPort: 8080
             - containerPort: 8081
           env:
+            - name: http_port
+              value: "8080"
             - name: CASSANDRA_CONTACT_POINT
               value: "cassandra-0.cassandra.databases.svc.cluster.local"

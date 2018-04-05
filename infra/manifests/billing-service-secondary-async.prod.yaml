@@ -51,6 +51,8 @@ spec:
         app: billing-service-secondary-async
         monitoring-group: microservices-metrics
     spec:
+      nodeSelector:
+        nodetype: microservices
       containers:
         - name: billing-service-secondary-async
           image: quay.io/virtuslab/billing-service-secondary-async

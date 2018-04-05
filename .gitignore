@@ -112,3 +112,6 @@ pull_secret.json
 license.txt
 terraform.tfstate
 terraform.tfstate.backup
+
+cluster/generated
+cluster-mini/generated

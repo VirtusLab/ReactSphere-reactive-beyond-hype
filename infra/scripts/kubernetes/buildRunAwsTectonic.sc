@@ -19,6 +19,9 @@ val requiredAliases = Seq(
   "payment"
 )
 
+// TODO document using $KUBECONFIG
+// TODO document cluster deployment and pre-deployment checks
+
 def performSetup(skipTests: Boolean, skipPublish: Boolean)(implicit stackType: StackType): Unit = {
   implicit val progressBar = ProgressBar(System.out, "START", "Starting Tectonic cluster setup...")
   implicit val env = Prod
@@ -33,11 +36,11 @@ def performSetup(skipTests: Boolean, skipPublish: Boolean)(implicit stackType: S
     projects = appsInParadigm.map(_._1),
     skipTests = skipTests,
     skipPublish = skipPublish,
-    registry = Quay
+    registry = Quay // TODO document Quay sign in
   )
 
   // 5. Tag nodes
-  // # TODO ADD NODE TAGGING HERE
+  tagNodes()
 
   // 5. Create DNS aliases pointing towards master node with ingress
   requiredAliases foreach createSubdomain
