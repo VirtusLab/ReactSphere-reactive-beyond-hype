@@ -18,7 +18,7 @@ import com.datastax.driver.core.{ResultSet, Row, Session}
 import com.typesafe.scalalogging.Logger
 import com.virtuslab.cassandra.CassandraClient
 import com.virtuslab.payments.payments.PaymentRequest
-import com.virtuslab.{BaseConfig, HeadersSupport, TraceId}
+import com.virtuslab.{Config, HeadersSupport, TraceId}
 import spray.json._
 
 import scala.collection.mutable.ArrayBuffer
@@ -210,7 +210,7 @@ trait AuctionServiceImpl extends AuctionService with SprayJsonSupport with Defau
   }
 
   protected def createBill(billRequest: PaymentRequest, token: String)(implicit traceId: TraceId): Future[Unit] = {
-    val url = s"http://${BaseConfig.billingServiceContactPoint}/api/v1/billing"
+    val url = s"http://${Config.billingServiceContactPoint}/api/v1/billing"
     val json = billRequest.toJson.compactPrint
     val entity = HttpEntity(`application/json`, json)
     val httpRequest = HttpRequest(POST, url)

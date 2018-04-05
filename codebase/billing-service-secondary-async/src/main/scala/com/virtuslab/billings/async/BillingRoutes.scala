@@ -12,7 +12,7 @@ import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.Logger
 import com.virtuslab.base.async.{IdentityHelpers, RoutesAuthSupport, RoutingUtils}
 import com.virtuslab.payments.payments.PaymentRequest
-import com.virtuslab.{BaseConfig, TraceId, TraceIdSupport}
+import com.virtuslab.{Config, TraceId, TraceIdSupport}
 import io.prometheus.client.Histogram
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
@@ -31,7 +31,7 @@ trait BillingRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
 
   protected implicit def executionContext: ExecutionContext
 
-  lazy val paymentSystemUrl = s"http://${BaseConfig.paymentSystemContactPoint}/api/v1/payment"
+  lazy val paymentSystemUrl = s"http://${Config.paymentSystemContactPoint}/api/v1/payment"
 
   lazy val billingRoutes: Route = handleRejections(rejectionHandler) {
     optionalHeaderValueByName("X-Trace-Id") { maybeTraceId =>

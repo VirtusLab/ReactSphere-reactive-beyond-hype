@@ -163,7 +163,8 @@ lazy val billingServiceSecondarySync = (project in file("billing-service-seconda
       name := "billing-service-secondary-sync",
       resolvers += Classpaths.typesafeReleases,
       dockerCommands ++= installBashCommands,
-      libraryDependencies ++= Seq("com.amazonaws" % "aws-java-sdk" % "1.11.306")
+      libraryDependencies ++= Seq("com.amazonaws" % "aws-java-sdk" % "1.11.306",
+        "com.jsuereth" %% "scala-arm" % "2.0")
 
     )
     .enablePlugins(ScalatraPlugin, JavaAppPackaging, DockerPlugin, GitVersioning)

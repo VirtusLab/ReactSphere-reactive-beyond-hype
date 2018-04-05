@@ -3,7 +3,7 @@ package com.virtuslab.billingsync
 import com.typesafe.scalalogging.Logger
 import com.virtuslab.billingsync.BillingService.TransactionId
 import com.virtuslab.payments.payments.PaymentRequest
-import com.virtuslab.{HeadersSupport, Logging, TraceId}
+import com.virtuslab.{Config, HeadersSupport, Logging, TraceId}
 import org.json4s.jackson.Serialization.write
 import org.json4s.{DefaultFormats, Formats}
 import scalaj.http.Http
