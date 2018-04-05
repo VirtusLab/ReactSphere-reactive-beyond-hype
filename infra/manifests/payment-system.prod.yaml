@@ -52,9 +52,11 @@ spec:
         app: payment-system
         monitoring-group: microservices-metrics
     spec:
+      nodeSelector:
+        nodetype: microservices
       containers:
         - name: payment-system
-          image: docker-registry.local/payment-system
+          image: quay.io/virtuslab/payment-system
           resources:
             limits:
               memory: "192Mi"
