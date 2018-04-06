@@ -23,6 +23,7 @@ class AuctionHouseSimulation extends Simulation with RandomHelper {
     .exec(accounts.createAccount())
     .exec(accounts.signIn)
     .exec(auctions.createAuction(category))
+    .pause(Config.startDelay)
 
   val bidInAuctionScenario = scenario("Bid in auction")
     .exec(accounts.createAccount())
