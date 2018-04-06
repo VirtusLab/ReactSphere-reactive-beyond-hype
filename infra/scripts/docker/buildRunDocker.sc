@@ -22,16 +22,16 @@ implicit val ec = new ExecutionContext {
   def reportFailure(t: Throwable) { t.printStackTrace() }
 }
 
-def performSetup(skipTests: Boolean, skipPublish: Boolean)(implicit stackType: StackType): Unit = {
+def performSetup(implicit stackType: StackType, steps: StepDefinitions): Unit = {
   implicit val progressBar = ProgressBar(System.out, "START", "Starting setup...")
 
   progressBar.start()
   progressBar.stepInto("Run docker images...")
 
-  val appsInParadigm = apps.map { a => s"${a._1}-${stackType.paradigm}" -> a._2 } ++ backingServices
+  val apps = appsInParadigm
 
   // Tests and publishes sync/async services to local docker registry
-  buildPublishApps(apps = appsInParadigm.map(_._1), skipTests = skipTests, skipPublish = skipPublish)
+  buildPublishApps(apps = apps.map(_._1))
 
   // Sets up networking shared among containers
   val networkName = setupNetworking()
@@ -40,7 +40,7 @@ def performSetup(skipTests: Boolean, skipPublish: Boolean)(implicit stackType: S
   runCassandra(networkName)
 
   // Runs apps docker images
-  val startedApps = runDockerImages(appsInParadigm, networkName)
+  val startedApps = runDockerImages(apps, networkName)
 
   Await.ready(
     startedApps, Duration.Inf
@@ -49,14 +49,13 @@ def performSetup(skipTests: Boolean, skipPublish: Boolean)(implicit stackType: S
   progressBar.finished()
 }
 
-private def buildPublishApps(apps: Seq[String], skipTests: Boolean, skipPublish: Boolean)
-                            (implicit progressBar: ProgressBar, stackType: StackType): Unit = {
+private def buildPublishApps(apps: Seq[String])
+                            (implicit progressBar: ProgressBar, stackType: StackType, steps: StepDefinitions): Unit = {
   buildStack(
     apps,
-    localRepo = true,
-    skipTests = skipTests,
-    skipPublish = skipPublish,
-    registry = Local
+    publishOpts = PublishOptions(
+      sbtTask = PublishLocal, registry = Local
+    )
   )
 }
 
@@ -85,7 +84,15 @@ private def runDockerImages(apps: Seq[(String, Int)], networkName: String)
     println(s"Image ID from ${app} is ${imageId}...")
 
     Future {
-      % docker("run", "--rm", "-p", s"${port}:${port}", envVariables, "--name", app, "--network", networkName, imageId)
+      val params = Seq(
+        Seq("run", "--rm"),
+        if(port > 0) Seq("-p", s"${port}:${port}") else Nil,
+        envVariables,
+        Seq("--name", app),
+        Seq("--network", networkName),
+        Seq(imageId)
+      )
+      % docker(Shellable(params.flatten))
     }
   }
 
@@ -112,18 +119,19 @@ private def setupNetworking()(implicit progressBar: ProgressBar, stackType: Stac
   networkName
 }
 
-private def buildEnvVariables(implicit stackType: StackType): Shellable = {
-  Shellable(
-    Seq(
-      s"BILLING_SERVICE_CONTACT_POINT=${BILLING_APP}-${stackType.paradigm}:${BILLING_PORT}",
-      s"IDENTITY_SERVICE_CONTACT_POINT=${IDENTITY_APP}-${stackType.paradigm}:${IDENTITY_PORT}",
-      s"PAYMENT_SYSTEM_CONTACT_POINT=${PAYMENT_SYSTEM}:${PAYMENT_PORT}",
+private def buildEnvVariables(implicit stackType: StackType): Seq[String] = {
+  Seq(
+    s"AUCTION_SERVICE_CONTACT_POINT=${AUCTION_APP}-${stackType.paradigm}:${AUCTION_PORT}",
+    s"BILLING_SERVICE_CONTACT_POINT=${BILLING_APP}-${stackType.paradigm}:${BILLING_PORT}",
+    s"IDENTITY_SERVICE_CONTACT_POINT=${IDENTITY_APP}-${stackType.paradigm}:${IDENTITY_PORT}",
+    s"PAYMENT_SYSTEM_CONTACT_POINT=${PAYMENT_SYSTEM}:${PAYMENT_PORT}",
 
-      s"CASSANDRA_CONTACT_POINT=${CASSANDRA_HOST}"
-    ).flatMap { variable =>
-      Seq("-e", variable)
-    }
-  )
+    s"CASSANDRA_CONTACT_POINT=${CASSANDRA_HOST}",
+
+    s"GATLING_DELAY=${GATLING_DELAY}"
+  ).flatMap { variable =>
+    Seq("-e", variable)
+  }
 }
 
 private def buildLinks(appsToLink: Seq[String])(implicit stackType: StackType): Shellable = {
@@ -135,7 +143,11 @@ private def buildLinks(appsToLink: Seq[String])(implicit stackType: StackType): 
 }
 
 private def printEndpoints(apps: Seq[(String, Int)])(implicit progressBar: ProgressBar) = {
-  val appsToPorts = apps.map { a => s"${a._1}:${a._2}"}.mkString("\n\t")
+  val appsToPorts = apps.map {
+    case (app, port) if port <= 0 => s"${app}:<no port exposed>"
+    case (app, port) => s"${app}:${port}"
+  }.mkString("\n\t")
+
   println(
     s"""
        |***************************************************

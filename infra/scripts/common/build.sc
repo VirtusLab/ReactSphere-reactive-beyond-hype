@@ -10,27 +10,38 @@ private def directoryToProjectName(directoryName: String) = {
   segments.head + segments.tail.map(_.capitalize).mkString
 }
 
-def buildStack(projects: Seq[String], registry: Registry,
-               localRepo: Boolean = false, skipTests: Boolean = true, skipPublish: Boolean = true)
-              (implicit progressBar: ProgressBar): Unit = {
-  implicit val codebasePath = pwd / "codebase"
-  progressBar stepInto "Build"
+def appsInParadigm(implicit stackType: StackType, steps: StepDefinitions): Seq[(String, Int)] = {
+  apps.map { a =>
+    s"${a._1}-${stackType.paradigm}" -> a._2
+  } ++
+  backingServices ++
+  ( if(steps.gatling) Seq(gatling -> -1) else Nil )
+}
 
-  projects foreach { directory =>
+def buildStack(projects: Seq[String], publishOpts: PublishOptions)
+              (implicit progressBar: ProgressBar, steps: StepDefinitions): Unit = {
+  implicit val codebasePath = pwd / "codebase"
+  progressBar.stepInto("Build")
+  progressBar.show("SBT build in progress..")
+
+  val sbtParams = projects.map { directory: String =>
     val project = directoryToProjectName(directory)
 
-    if(!skipTests) {
-      progressBar show s"Testing $project..."
-      % sbt(s"-Ddocker.registry.host=${registry.value}", "coverageOff", s"$project/test")
-    }
+    Seq(
+      if(steps.tests) Option(s"$project/test") else None,
 
-    if(!skipPublish) {
-      progressBar show s"Publishing $project..."
-      % sbt(s"-Ddocker.registry.host=${registry.value}", "coverageOff", s"$project/docker:${publishTask(localRepo)}")
-    }
-  }
+      if(steps.publish) {
+        val task = publishOpts.sbtTask
+        Option(s"$project/docker:${task.name}")
+      } else {
+        None
+      }
+    ).flatten
+  }.flatten
+
+  val registry = publishOpts.registry
+  val params = Seq(s"-Ddocker.registry.host=${registry.value}", "coverageOff") ++ sbtParams
+  % sbt(Shellable(params))
 
   progressBar.finishedNamespace()
 }
-
-private def publishTask(localRepo: Boolean) = if (localRepo) "publishLocal" else "publish"

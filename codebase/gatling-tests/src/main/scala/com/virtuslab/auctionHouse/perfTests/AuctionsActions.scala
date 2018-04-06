@@ -10,7 +10,7 @@ import org.json4s.jackson.Serialization.write
 
 class AuctionsActions(errorHandler: ErrorHandler) extends BaseActions(errorHandler) {
 
-  def url(path: String) =  s"http://${Config.auctionServiceHostPort}/api/${Config.apiVersion}/$path"
+  def url(path: String) =  s"http://${Config.auctionServiceContactPoint}/api/${Config.apiVersion}/$path"
 
   protected val getAuctionUrl: Expression[String] = (session: Session) => {
     session(auctionsParam).asOption[Auctions]
