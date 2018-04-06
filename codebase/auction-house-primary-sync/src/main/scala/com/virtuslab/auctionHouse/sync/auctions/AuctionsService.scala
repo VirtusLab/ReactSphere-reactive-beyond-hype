@@ -8,19 +8,18 @@ import com.datastax.driver.core.utils.UUIDs
 import com.datastax.driver.mapping.Mapper
 import com.typesafe.scalalogging.Logger
 import com.virtuslab._
-import com.virtuslab.auctionHouse.sync.auctions.AuctionsService.{InvalidBidException, InvalidCategoryException, NotAuctionWinnerException, UnknownEntityException}
+import com.virtuslab.auctionHouse.sync.auctions.AuctionsService._
 import com.virtuslab.auctionHouse.sync.cassandra.SessionManager.ScalaMapper
 import com.virtuslab.auctionHouse.sync.cassandra._
 import com.virtuslab.auctionHouse.sync.commons.ServletModels
 import com.virtuslab.auctionHouse.sync.commons.ServletModels.{AuctionViewResponse, Auctions, CreateAuctionRequest, EntityNotFoundException}
 import com.virtuslab.auctions.Categories
 import com.virtuslab.payments.payments.PaymentRequest
-import org.json4s.{DefaultFormats, Formats}
 import org.json4s.jackson.Serialization.write
+import org.json4s.{DefaultFormats, Formats}
 import scalaj.http.Http
 
 import scala.collection.JavaConverters._
-import scala.util.{Failure, Success, Try}
 
 class AuctionsService extends TraceIdSupport with Logging with HeadersSupport {
 
@@ -106,10 +105,9 @@ class AuctionsService extends TraceIdSupport with Logging with HeadersSupport {
     if(response.code == 200) {
       val transactionId = response.body
       log.info(s"Success payment fulfilled for user: $bidder, transactionId: ${transactionId}")
-      Success(())
     } else {
       log.error(s"Billing request failed. Code: ${response.code}, msg: ${response.body}")
-      Failure(new Exception("Failed to finalize auction"))
+      throw new AuctionFinalizationException(s"Failed to finalize auction  ${response.body}")
     }
   }
 }
@@ -121,6 +119,8 @@ object AuctionsService {
   class InvalidBidException(msg: String) extends RuntimeException(msg)
 
   class NotAuctionWinnerException(msg: String) extends RuntimeException(msg)
+
+  class AuctionFinalizationException(msg: String) extends RuntimeException(msg)
 
   class UnknownEntityException(msg: String) extends RuntimeException(msg)
 

@@ -12,20 +12,21 @@ class BillingServlet extends BaseServlet with Authentication {
 
   override def servletName: String = "BillingServlet"
 
-  protected val service = new BillingService
+  protected lazy val service = new BillingService
+  protected lazy val s3Service = new S3Service
 
   post("/") {
     timing("billingProcessing") {
       implicit val traceId: TraceId = getTraceId
-      auth { username =>
+      auth { _ =>
         val billReq = parsedBody.extract[PaymentRequest]
-
-        service.performPayment(billReq).map { r =>
-          Ok(r.id)
-        }.recover {
+        (for {
+          resp <- service.performPayment(billReq)
+          _ <- s3Service.putInvoice(billReq)
+        } yield Ok(resp.id)).recover {
           case e => InternalServerError(e.getMessage)
         }
       }.get
-      }
     }
+  }
 }

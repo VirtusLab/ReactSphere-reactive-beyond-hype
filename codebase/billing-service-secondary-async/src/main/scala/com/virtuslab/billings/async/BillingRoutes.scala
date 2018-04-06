@@ -11,17 +11,19 @@ import akka.http.scaladsl.server.Directives.{as, complete, entity, handleRejecti
 import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.Logger
 import com.virtuslab.base.async.{IdentityHelpers, RoutesAuthSupport, RoutingUtils}
+import com.virtuslab.payments.payments.PaymentRequest
 import com.virtuslab.{Config, TraceId, TraceIdSupport}
 import io.prometheus.client.Histogram
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future.failed
 import scala.util.{Failure, Success}
 
-trait BillingRoutes extends SprayJsonSupport with DefaultJsonProtocol with RoutingUtils with RoutesAuthSupport {
+trait BillingRoutes extends SprayJsonSupport with DefaultJsonProtocol with RoutingUtils with RoutesAuthSupport with S3Service {
   this: IdentityHelpers with TraceIdSupport =>
 
-  implicit lazy val payFormat: RootJsonFormat[PayRequest] = jsonFormat3(PayRequest)
+  implicit lazy val payFormat: RootJsonFormat[PaymentRequest] = jsonFormat3(PaymentRequest)
 
   protected def logger: Logger
 
@@ -37,21 +39,20 @@ trait BillingRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
       authenticate(traceId, authenticator) { username =>
         path("billing") {
           post {
-            entity(as[PayRequest]) { request =>
+            entity(as[PaymentRequest]) { request =>
               logger.info(s"[${traceId.id}] Received payment request '$request'.")
               val payRequest = HttpRequest(POST, paymentSystemUrl)
                               .withHeaders(RawHeader("X-Trace-Id", traceId.id))
-                              .withEntity(HttpEntity(`application/json`, request.toJson.compactPrint))
+                              .withEntity(HttpEntity(`application/json`, payFormat.write(request).compactPrint))
 
-              onComplete(Http().singleRequest(payRequest)) {
-                case Success(response) => {
-                  if (response.status.isSuccess())
-                    complete(OK)
-                  else {
-                    logger.error(s"Unexpected response: $response")
-                    complete(ServiceUnavailable, Error("Unexpected response from payment system"))
-                  }
-                }
+              onComplete(for {
+                httpResponse <- Http().singleRequest(payRequest)
+                _ <- if(httpResponse.status.isSuccess()) putInvoice(request) else failed(
+                  new RuntimeException("Unexpected response from payment system"))
+              } yield ()) {
+                case Success(_) =>
+                  logger.info(s"[${traceId.id}] payment completed successfully")
+                  complete(OK)
                 case Failure(exception) =>
                   logger.error(s"[${traceId.id}] Error occurred while requesting payment", exception)
                   failWith(exception)
@@ -63,7 +64,4 @@ trait BillingRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
       }
     }
   }
-
-  case class PayRequest(payer: String, payee: String, amount: BigDecimal)
-
 }
