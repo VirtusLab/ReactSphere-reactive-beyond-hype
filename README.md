@@ -12,6 +12,17 @@
  * kubectl (https://kubernetes.io/docs/tasks/tools/install-kubectl/ )
  * Vagrant ( tested on ver. 2.0.x, https://www.vagrantup.com/downloads.html )
 
+### Prerequistes
+
+Make sure to export following environment variables on your host:
+
+* Key and secret for user: `billing-service-worker`
+
+```bash
+export BILLING_WORKER_AWS_KEY=xxxxxxxxxxxx
+export BILLING_WORKER_AWS_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+ 
 ### Development setup:
 
 First of all you may run the whole stack locally via on docker containers or run whole tectonic k8s cluster. The latter is much more aligned with the real production configuration.

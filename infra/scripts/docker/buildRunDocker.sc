@@ -74,10 +74,10 @@ private def runDockerImages(apps: Seq[(String, Int)], networkName: String)
                            (implicit progressBar: ProgressBar, stackType: StackType): Future[Seq[Unit]] = {
   progressBar.stepInto("Running docker images")
 
-  val envVariables = buildEnvVariables
-
   val startedApps = apps.map { case (app, port) =>
     println(s"Running service: ${app} on port ${port}...")
+
+    val envVariables = buildEnvVariables(app)
 
     val res = %% docker("images", "--filter", s"reference=docker-registry.local/${app}:latest", "--format", "{{.ID}}")
     val imageId = res.out.string.trim
@@ -119,20 +119,34 @@ private def setupNetworking()(implicit progressBar: ProgressBar, stackType: Stac
   networkName
 }
 
-private def buildEnvVariables(implicit stackType: StackType): Seq[String] = {
-  Seq(
-    s"AUCTION_SERVICE_CONTACT_POINT=${AUCTION_APP}-${stackType.paradigm}:${AUCTION_PORT}",
-    s"BILLING_SERVICE_CONTACT_POINT=${BILLING_APP}-${stackType.paradigm}:${BILLING_PORT}",
-    s"IDENTITY_SERVICE_CONTACT_POINT=${IDENTITY_APP}-${stackType.paradigm}:${IDENTITY_PORT}",
-    s"PAYMENT_SYSTEM_CONTACT_POINT=${PAYMENT_SYSTEM}:${PAYMENT_PORT}",
+private def buildEnvVariables(app: String)(implicit stackType: StackType): Seq[String] = {
+  val specificVars = app match {
+    case a if a == s"${BILLING_APP}-${stackType.paradigm}" =>
+      Seq(
+        s"AWS_ACCESS_KEY_ID=${Option(System.getenv("BILLING_WORKER_AWS_KEY")).getOrElse("AWS_ACCESS_KEY_NOT_SET")}",
+        s"AWS_SECRET_ACCESS_KEY=${Option(System.getenv("BILLING_WORKER_AWS_SECRET")).getOrElse("AWS_SECRET_NOT_SET")}"
+      )
+    case a if a == s"${gatling}" =>
+      Seq(
+        s"GATLING_DELAY=${GATLING_DELAY}"
+      )
+    case _ =>
+      Nil
+  }
 
-    s"CASSANDRA_CONTACT_POINT=${CASSANDRA_HOST}",
-
-    s"GATLING_DELAY=${GATLING_DELAY}"
-  ).flatMap { variable =>
+  (defaultEnvVariables ++ specificVars).flatMap { variable =>
     Seq("-e", variable)
   }
 }
+
+private def defaultEnvVariables(implicit stackType: StackType): Seq[String] = Seq(
+  s"AUCTION_SERVICE_CONTACT_POINT=${AUCTION_APP}-${stackType.paradigm}:${AUCTION_PORT}",
+  s"BILLING_SERVICE_CONTACT_POINT=${BILLING_APP}-${stackType.paradigm}:${BILLING_PORT}",
+  s"IDENTITY_SERVICE_CONTACT_POINT=${IDENTITY_APP}-${stackType.paradigm}:${IDENTITY_PORT}",
+  s"PAYMENT_SYSTEM_CONTACT_POINT=${PAYMENT_SYSTEM}:${PAYMENT_PORT}",
+
+  s"CASSANDRA_CONTACT_POINT=${CASSANDRA_HOST}"
+)
 
 private def buildLinks(appsToLink: Seq[String])(implicit stackType: StackType): Shellable = {
   Shellable(
