@@ -1,0 +1,234 @@
+{
+	"info": {
+		"_postman_id": "2c82284b-e993-94cb-7c9c-a10e5d244dec",
+		"name": "ReactSphere::AuctionHouse",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Status",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "{{host}}/_status",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"_status"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "List auctions",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "9a09d622-3323-48a3-a9d5-ddfd1290542d",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{identityToken}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{host}}/api/v1/auctions?category=motorization",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auctions"
+					],
+					"query": [
+						{
+							"key": "category",
+							"value": "motorization"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create an auction",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "9a09d622-3323-48a3-a9d5-ddfd1290542d",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{identityToken}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"category\": \"motorization\",\n\t\"title\": \"Brand new Volkswagen Golf\",\n\t\"description\": \"It is what it is! ®\",\n\t\"minimumPrice\": 24000,\n\t\"details\": {}\n}"
+				},
+				"url": {
+					"raw": "{{host}}/api/v1/auctions",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auctions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch an auction",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "9a09d622-3323-48a3-a9d5-ddfd1290542d",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{identityToken}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"category\": \"motorisation\",\n\t\"title\": \"Brand new Volkswagen Golf\",\n\t\"description\": \"It is what it is! ®\",\n\t\"minimumPrice\": 24000,\n\t\"details\": {}\n}"
+				},
+				"url": {
+					"raw": "{{host}}/api/v1/auctions/3da20e41-adad-4fed-aefe-bfd28a0d74be",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auctions",
+						"3da20e41-adad-4fed-aefe-bfd28a0d74be"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Bid in auction",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "9a09d622-3323-48a3-a9d5-ddfd1290542d",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{identityToken}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"amount\": 11\n}"
+				},
+				"url": {
+					"raw": "{{host}}/api/v1/auctions/3da20e41-adad-4fed-aefe-bfd28a0d74be/bids",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auctions",
+						"3da20e41-adad-4fed-aefe-bfd28a0d74be",
+						"bids"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "d9a4da6f-cc5c-446c-a2eb-a365987f7575",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "5e3aa610-43ab-40c5-95d1-dbdd4b3073b0",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
