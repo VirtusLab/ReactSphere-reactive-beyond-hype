@@ -121,6 +121,7 @@ private def setupNetworking()(implicit progressBar: ProgressBar, stackType: Stac
 
 private def buildEnvVariables(implicit stackType: StackType): Seq[String] = {
   Seq(
+    s"AUCTION_SERVICE_CONTACT_POINT=${AUCTION_APP}-${stackType.paradigm}:${AUCTION_PORT}",
     s"BILLING_SERVICE_CONTACT_POINT=${BILLING_APP}-${stackType.paradigm}:${BILLING_PORT}",
     s"IDENTITY_SERVICE_CONTACT_POINT=${IDENTITY_APP}-${stackType.paradigm}:${IDENTITY_PORT}",
     s"PAYMENT_SYSTEM_CONTACT_POINT=${PAYMENT_SYSTEM}:${PAYMENT_PORT}",

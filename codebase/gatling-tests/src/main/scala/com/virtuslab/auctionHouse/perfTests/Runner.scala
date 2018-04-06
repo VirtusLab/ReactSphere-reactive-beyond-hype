@@ -4,12 +4,19 @@ import java.io.File
 
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder
+import com.typesafe.scalalogging.Logger
+import com.virtuslab.Logging
 import io.gatling.app.Gatling
 import io.gatling.core.config.GatlingPropertiesBuilder
 
-object Runner extends App {
+object Runner extends App with Logging {
 
-  println(s"Waiting (${Config.startDelay}) before starting Gatling tests...")
+  override protected val log: Logger = Logger(getClass)
+
+  log.info(s"Auction Service URL is: ${Config.auctionServiceContactPoint}")
+  log.info(s"Identity Service URL is: ${Config.identityServiceContactPoint}")
+
+  log.info(s"Waiting (${Config.startDelay}) before starting Gatling tests...")
   Thread.sleep(Config.startDelay.toMillis)
 
   val props = new GatlingPropertiesBuilder
@@ -40,5 +47,4 @@ object Runner extends App {
   }
 
   private def s3euWest1 = AmazonS3ClientBuilder.standard().withRegion("eu-west-1").build
-
 }
