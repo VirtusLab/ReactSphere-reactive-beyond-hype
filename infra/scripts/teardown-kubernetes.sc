@@ -2,10 +2,10 @@
 // Tears down all the services and infra from kubernetes cluster
 //
 
-import $file.common.splash
+import $file.common.cli
 import $file.kubernetes.teardown
 
-import splash._
+import cli._
 import teardown._
 import ammonite.ops._
 

@@ -13,7 +13,7 @@ class AccountsActions(errorHandler: ErrorHandler) extends BaseActions(errorHandl
   protected val logger = LoggerFactory.getLogger(getClass)
 
   val scenarioErrors = new ConcurrentLinkedQueue[String]()
-  def url(path: String) =  s"http://${Config.identityServiceHostPort}/api/${Config.apiVersion}/$path"
+  def url(path: String) =  s"http://${Config.identityServiceContactPoint}/api/${Config.apiVersion}/$path"
 
   def createAccount(username: String = randStr, password: String = randStr) = {
     http("Account creation")
