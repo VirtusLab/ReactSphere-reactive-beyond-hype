@@ -77,7 +77,7 @@ trait AuctionRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
                     .flatMap(h => parseAuthHeader(h.value())).get
                   logger.info(s"[${traceId.id}] Received pay request for auction '$auctionId'.")
 
-                  val histogramTimer = requestsLatency.labels("payForAuction").startTimer()
+                  val histogramTimer = requestsLatency.labels("auctionFinalization").startTimer()
 
                   onComplete(payForAuction(auctionId, username, token)) {
                     case Success(_) =>

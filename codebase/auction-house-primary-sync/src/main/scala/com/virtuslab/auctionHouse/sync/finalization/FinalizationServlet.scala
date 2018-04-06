@@ -29,7 +29,7 @@ class FinalizationServlet extends BaseServlet with Authentication {
       timing("auctionFinalization") {
         val auctionId = params("id")
         Try(service.payForAuction(auctionId, username, getToken.get.value)).map { _ =>
-          Ok(s"Nice, auction [${auctionId}] finalized!")
+          Ok()
         }.recover {
           case e: NotAuctionWinnerException =>
             log.warn(s"[${traceId.id}] Bidder '$username' is not auction '$auctionId' winner.")
