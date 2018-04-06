@@ -12,19 +12,17 @@ abstract class BaseActions(errorHandler: ErrorHandler) extends RandomHelper {
 
   object SessionParams {
 
-    case class Account(username: String, password: String)
-
-    val account = "account"
-    val token = "token"
-
     val signInRequestTemplate: Expression[String] = (session: Session) => {
-      session(account).asOption[Option[Account]].flatten
-        .map(account => s"""{"username": "${account.username}", "password" : "${account.password}"}""")
-        .getOrElse(errorHandler.raiseError("Account not found in gatling session"))
+      (for {
+        username <- session(SessionConstants.username).asOption[String]
+        password <- session(SessionConstants.password).asOption[String]
+      } yield {
+        s"""{"username": "$username", "password" : "$password"}"""
+      }).getOrElse(errorHandler.raiseError("Account not found in gatling session"))
     }
 
     val authHeaderValue: Expression[String] = (session: Session) => {
-      session(token).asOption[String]
+      session(SessionConstants.token).asOption[String]
         .map(token => s"bearer $token")
         .getOrElse(errorHandler.raiseError("Token not found in gatling session"))
     }
@@ -42,4 +40,12 @@ abstract class BaseActions(errorHandler: ErrorHandler) extends RandomHelper {
         .header("Authorization", SessionParams.authHeaderValue)
     }
   }
+}
+object SessionConstants {
+
+  val username = "username"
+  val password = "password"
+  val token = "token"
+  val category = "category"
+  val createAuctionRequest = "createAuctionRequest"
 }

@@ -15,17 +15,12 @@ class AccountsActions(errorHandler: ErrorHandler) extends BaseActions(errorHandl
   val scenarioErrors = new ConcurrentLinkedQueue[String]()
   def url(path: String) =  s"http://${Config.identityServiceContactPoint}/api/${Config.apiVersion}/$path"
 
-  def createAccount(username: String = randStr, password: String = randStr) = {
+  def createAccount = {
     http("Account creation")
       .post(url("accounts"))
       .header("Content-Type", "application/json")
-      .body(StringBody(s"""{"username": "${username}", "password" : "${password}"}"""))
-      .check(
-        status.is(201),
-        status.transform(_ match {
-          case 201 => Some(SessionParams.Account(username, password))
-          case _ => None
-        }).saveAs(SessionParams.account))
+      .body(StringBody("""{"username": "${username}", "password" : "${password}" }"""))
+      .check(status.is(201))
   }
 
   def signIn = {
@@ -35,7 +30,7 @@ class AccountsActions(errorHandler: ErrorHandler) extends BaseActions(errorHandl
       .body(StringBody(SessionParams.signInRequestTemplate))
       .check(
         status.in(200),
-        jsonPath("$.token").saveAs(SessionParams.token)
+        jsonPath("$.token").saveAs(SessionConstants.token)
       )
   }
 }

@@ -12,6 +12,12 @@ class AuctionsActions(errorHandler: ErrorHandler) extends BaseActions(errorHandl
 
   def url(path: String) =  s"http://${Config.auctionServiceContactPoint}/api/${Config.apiVersion}/$path"
 
+  protected val createAuctionBody: Expression[String] = (session: Session) => {
+    session(SessionConstants.createAuctionRequest).asOption[CreateAuctionRequest]
+      .map(write(_))
+      .getOrElse(errorHandler.raiseError("Create auction request not found in gatling session"))
+  }
+
   protected val getAuctionUrl: Expression[String] = (session: Session) => {
     session(auctionsParam).asOption[Auctions]
       .map {
@@ -51,21 +57,22 @@ class AuctionsActions(errorHandler: ErrorHandler) extends BaseActions(errorHandl
     parse(s"""{"$randStr": "$randStr"}"""))
 
 
-  def createAuction(category: String) = {
+  def createAuction = {
     http("create auction")
       .post(url("auctions"))
       .withAuthHeaders()
-      .body(StringBody(write(randAuction(category))))
+      .body(StringBody(createAuctionBody))
       .check(
         status.is(201)
       )
   }
 
-  def listAuctions(category: String) = {
+  def listAuctions = {
     http("list auctions")
       .get(url("auctions"))
       .withAuthHeaders()
-      .queryParam("category", category)
+      .queryParam("category", (s: Session) => s(SessionConstants.category).asOption[String]
+        .getOrElse(errorHandler.raiseError("Category not found in session")))
       .check(
         status.is(200),
         bodyString.transform(parse(_).extract[Auctions]).saveAs(auctionsParam)
