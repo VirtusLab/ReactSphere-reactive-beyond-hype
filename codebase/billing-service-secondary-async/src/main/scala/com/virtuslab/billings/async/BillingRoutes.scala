@@ -11,7 +11,7 @@ import akka.http.scaladsl.server.Directives.{as, complete, entity, handleRejecti
 import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.Logger
 import com.virtuslab.base.async.{IdentityHelpers, RoutesAuthSupport, RoutingUtils}
-import com.virtuslab.payments.payments.PaymentRequest
+import com.virtuslab.payments.payments.{Invoice, PaymentRequest}
 import com.virtuslab.{Config, TraceId, TraceIdSupport}
 import io.prometheus.client.Histogram
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
@@ -24,6 +24,7 @@ trait BillingRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
   this: IdentityHelpers with TraceIdSupport =>
 
   implicit lazy val payFormat: RootJsonFormat[PaymentRequest] = jsonFormat3(PaymentRequest)
+  implicit lazy val invoiceFormat: RootJsonFormat[Invoice] = jsonFormat1(Invoice)
 
   protected def logger: Logger
 
@@ -41,20 +42,23 @@ trait BillingRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
           post {
             entity(as[PaymentRequest]) { request =>
               logger.info(s"[${traceId.id}] Received payment request '$request'.")
+              val histogramTimer = requestsLatency.labels("payForAuction").startTimer()
               val payRequest = HttpRequest(POST, paymentSystemUrl)
                               .withHeaders(RawHeader("X-Trace-Id", traceId.id))
                               .withEntity(HttpEntity(`application/json`, payFormat.write(request).compactPrint))
 
               onComplete(for {
                 httpResponse <- Http().singleRequest(payRequest)
-                _ <- if(httpResponse.status.isSuccess()) putInvoice(request) else failed(
+                invoiceId <- if(httpResponse.status.isSuccess()) putInvoice(request) else failed(
                   new RuntimeException("Unexpected response from payment system"))
-              } yield ()) {
-                case Success(_) =>
+              } yield invoiceId) {
+                case Success(invoiceId) =>
                   logger.info(s"[${traceId.id}] payment completed successfully")
-                  complete(OK)
+                  histogramTimer.observeDuration()
+                  complete(OK, Invoice(invoiceId))
                 case Failure(exception) =>
                   logger.error(s"[${traceId.id}] Error occurred while requesting payment", exception)
+                  histogramTimer.observeDuration()
                   failWith(exception)
               }
 
