@@ -115,3 +115,5 @@ terraform.tfstate.backup
 
 cluster/generated
 cluster-mini/generated
+
+codebase/results

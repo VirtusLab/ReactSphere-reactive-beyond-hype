@@ -32,6 +32,8 @@ val PAYMENT_SYSTEM = "payment-system"
 val CASSANDRA_HOST = "cassandra"
 val CASSANDRA_PORT = 9042
 
+val GATLING_DELAY = 60
+
 def apps = Seq(
   AUCTION_APP -> AUCTION_PORT,
   BILLING_APP -> BILLING_PORT,
@@ -41,6 +43,21 @@ def apps = Seq(
 def backingServices = Seq(
   PAYMENT_SYSTEM -> PAYMENT_PORT
 )
+
+val gatling = "gatling-tests"
+
+case class PublishOptions(sbtTask: PublishTask, registry: Registry)
+
+sealed trait PublishTask {
+  def name: String
+}
+
+case object PublishLocal extends PublishTask {
+  override def name: String = "publishLocal"
+}
+case object Publish extends PublishTask {
+  override def name: String = "publish"
+}
 
 sealed trait Environment {
   def name: String
@@ -65,3 +82,5 @@ case object Local extends Registry {
 case object Quay extends Registry {
   def value: String = "quay.io/virtuslab"
 }
+
+case class StepDefinitions(tests: Boolean = true, publish: Boolean = true, gatling: Boolean = false)

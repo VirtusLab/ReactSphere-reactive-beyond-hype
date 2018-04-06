@@ -9,6 +9,9 @@ import io.gatling.core.config.GatlingPropertiesBuilder
 
 object Runner extends App {
 
+  println(s"Waiting (${Config.startDelay}) before starting Gatling tests...")
+  Thread.sleep(Config.startDelay.toMillis)
+
   val props = new GatlingPropertiesBuilder
   props.dataDirectory("jar")
   props.simulationClass(classOf[AuctionHouseSimulation].getName)

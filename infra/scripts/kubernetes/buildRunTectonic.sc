@@ -11,7 +11,7 @@ import display._
 import build._
 
 
-def performSetup(skipTests: Boolean, skipPublish: Boolean)(implicit stackType: StackType): Unit = {
+def performSetup(implicit stackType: StackType, steps: StepDefinitions): Unit = {
   implicit val progressBar = ProgressBar(System.out, "START", "Starting Tectonic cluster setup...")
   implicit val env = Dev
   progressBar.start()
@@ -26,12 +26,12 @@ def performSetup(skipTests: Boolean, skipPublish: Boolean)(implicit stackType: S
   waitForDockerRegistry
 
   // 4. Build & test whole stack locally, publish to in-cluster registry
-  val appsInParadigm = apps.map { a => s"${a._1}-${stackType.paradigm}" -> a._2 } ++ backingServices
+  val apps = appsInParadigm
   buildStack(
-    projects = appsInParadigm.map(_._1),
-    skipTests = skipTests,
-    skipPublish = skipPublish,
-    registry = Local
+    projects = apps.map(_._1),
+    publishOpts = PublishOptions(
+      sbtTask = Publish, registry = Local
+    )
   )
 
   // 5. Deploy cassandra to Tectonic cluster and wait until it's completely up
@@ -42,7 +42,7 @@ def performSetup(skipTests: Boolean, skipPublish: Boolean)(implicit stackType: S
   runCassandraMigration
 
   // 7. Deploy all microservices and wait for them to be up
-  deployAll(appsInParadigm.map(_._1))
+  deployAll(apps.map(_._1))
 
   // 8. Deploy monitoring
   deployMetrics
