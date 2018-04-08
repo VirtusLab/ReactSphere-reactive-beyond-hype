@@ -1,12 +1,12 @@
 package com.virtuslab.billingsync
 
 import com.typesafe.scalalogging.Logger
+import com.virtuslab.base.sync.Http
 import com.virtuslab.billingsync.BillingService.TransactionId
 import com.virtuslab.payments.payments.PaymentRequest
 import com.virtuslab.{Config, HeadersSupport, Logging, TraceId}
 import org.json4s.jackson.Serialization.write
 import org.json4s.{DefaultFormats, Formats}
-import scalaj.http.Http
 
 import scala.util.{Failure, Random, Try}
 

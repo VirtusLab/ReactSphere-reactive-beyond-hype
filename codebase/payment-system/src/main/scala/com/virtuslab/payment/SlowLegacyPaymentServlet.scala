@@ -17,7 +17,7 @@ class SlowLegacyPaymentServlet extends BaseServlet {
   post("/") {
     timing("payment") {
       val req = parsedBody.extract[PaymentRequest]
-      log.debug(s"Payment request received: payer: ${req.payer}, payee: ${req.payee}, amount (cents): ${req.amount}")
+      log.info(s"Payment request received: payer: ${req.payer}, payee: ${req.payee}, amount (cents): ${req.amount}")
       Thread.sleep(timout)
       Ok()
     }

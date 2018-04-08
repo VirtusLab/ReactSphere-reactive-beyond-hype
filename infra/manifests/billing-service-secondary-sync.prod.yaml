@@ -7,11 +7,11 @@ metadata:
 apiVersion: v1
 kind: Service
 metadata:
-  name: billing-service-secondary-sync
+  name: billing-service-secondary
   namespace: microservices
 spec:
   selector:
-    app: billing-service-secondary-sync
+    app: billing-service-secondary
   ports:
     - protocol: TCP
       port: 80
@@ -20,7 +20,7 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: billing-service-secondary-sync
+  name: billing-service-secondary
   namespace: microservices
   annotations:
     kubernetes.io/ingress.class: "tectonic"
@@ -34,27 +34,27 @@ spec:
     http:
       paths:
       - backend:
-          serviceName: billing-service-secondary-sync
+          serviceName: billing-service-secondary
           servicePort: 80
         path: /
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: billing-service-secondary-sync
+  name: billing-service-secondary
   namespace: microservices
 spec:
   replicas: 1 #todo replicas
   template:
     metadata:
       labels:
-        app: billing-service-secondary-sync
+        app: billing-service-secondary
         monitoring-group: microservices-metrics
     spec:
       nodeSelector:
         nodetype: microservices
       containers:
-        - name: billing-service-secondary-sync
+        - name: billing-service-secondary
           image: quay.io/virtuslab/billing-service-secondary-sync
           resources:
             limits:
@@ -66,6 +66,6 @@ spec:
             - name: http_port
               value: "8080"
             - name: IDENTITY_SERVICE_CONTACT_POINT
-              value: "identity-service-tertiary-sync.microservices.svc.cluster.local"
+              value: "identity-service-tertiary.microservices.svc.cluster.local"
             - name: PAYMENT_SYSTEM_CONTACT_POINT
               value: "payment-system.microservices.svc.cluster.local"

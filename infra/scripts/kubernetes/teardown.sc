@@ -7,17 +7,22 @@ import $file.tectonic
 import deployments._
 import display._
 import vars._
+import build._
 
 def performTeardown(dropInfra: Boolean): Unit = {
+  implicit val env = Dev
   implicit val progressBar = ProgressBar(System.out, "START", "Starting tear down...")
 
-  val appsInParadigm: Seq[String] = Seq(SyncStack, AsyncStack).flatMap { stackType =>
-    apps.map { a => s"${a._1}-${stackType.paradigm}" }
-  }
+  val steps = StepDefinitions(
+    gatling = true
+  )
 
-  val appsToTeardown = (appsInParadigm ++ backingServices.map(_._1))
+  val apps: Seq[String] = (
+    appsInParadigm(SyncStack, steps) ++ appsInParadigm(AsyncStack, steps)
+    )
+    .map(_._1).toSet.toList
 
-  tearMicroservicesDown(appsToTeardown)
+  tearMicroservicesDown(apps)
 
   if(dropInfra) {
     tearMetricsDown

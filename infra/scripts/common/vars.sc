@@ -46,6 +46,14 @@ def backingServices = Seq(
 
 val gatling = "gatling-tests"
 
+val AWS_KEY_K8S_PROP = "key"
+val K8S_AWS_NAME = "aws"
+val AWS_SECRET_K8S_PROP = "secret"
+
+val awsKey = Option(System.getenv("BILLING_WORKER_AWS_KEY")).getOrElse("AWS_ACCESS_KEY_NOT_SET")
+val awsSecret = Option(System.getenv("BILLING_WORKER_AWS_SECRET")).getOrElse("AWS_SECRET_NOT_SET")
+
+
 case class PublishOptions(sbtTask: PublishTask, registry: Registry)
 
 sealed trait PublishTask {

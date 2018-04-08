@@ -41,9 +41,15 @@ def performSetup(implicit stackType: StackType, steps: StepDefinitions): Unit = 
   // 6. Run schema migration job when Cassandra is up
   runCassandraMigration
 
-  // 7. Deploy all microservices and wait for them to be up
+  // 7. Create K8s namespace
+  createNamespace
+
+  // 8. Create AWS credentials
+  createAwsCredentials
+
+  // 9. Deploy all microservices and wait for them to be up
   deployAll(apps.map(_._1))
 
-  // 8. Deploy monitoring
+  // 10. Deploy monitoring
   deployMetrics
 }

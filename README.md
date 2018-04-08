@@ -56,19 +56,14 @@ $worker_vm_memory = 4096
 
 ##### Modify /etc/hosts for local cluster ingresses (entry points)
 
-1. Open `/etc/hosts` with superuser permissions
-2. Add line `172.17.4.201    docker-registry.local`
-3. Add line `172.17.4.201    hello-world-async.local`
-4. Add line `172.17.4.201    hello-world-sync.local` 
-5. Add line `172.17.4.201    auction-house-primary-async.local` 
-6. Add line `172.17.4.201    auction-house-primary-sync.local`
-7. Add line `172.17.4.201    billing-service-secondary-async.local
-8. Add line `172.17.4.201    billing-service-secondary-sync.local
-9. Add line `172.17.4.201    identity-service-tertiary-async.local
-10. Add line `172.17.4.201   identity-service-tertiary-sync.local
-11. Add line `172.17.4.201   payment-system.local
+* Open `/etc/hosts` with superuser permissions
+* Add line `172.17.4.201    docker-registry.local`
+* Add line `172.17.4.201    auction-house-primary.local` 
+* Add line `172.17.4.201    billing-service-secondary.local
+* Add line `172.17.4.201    identity-service-tertiary.local
+* Add line `172.17.4.201    payment-system.local
 
-12. Save it
+* Save it
 
 ##### Starting Tectonic Kubernetes local cluster
 

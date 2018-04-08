@@ -14,11 +14,11 @@ import com.virtuslab.auctionHouse.sync.cassandra._
 import com.virtuslab.auctionHouse.sync.commons.ServletModels
 import com.virtuslab.auctionHouse.sync.commons.ServletModels.{AuctionViewResponse, Auctions, CreateAuctionRequest, EntityNotFoundException}
 import com.virtuslab.auctions.Categories
+import com.virtuslab.base.sync.Http
 import com.virtuslab.payments.payments.PaymentRequest
 import org.json4s.jackson.Serialization.write
 import org.json4s.{DefaultFormats, Formats}
 
-import scalaj.http.Http
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.DurationInt
 
@@ -99,10 +99,6 @@ class AuctionsService extends TraceIdSupport with Logging with HeadersSupport {
 
     val body = write(PaymentRequest(bidder, auction.owner, maxBid.amount))
     val response = Http(billingUrl)
-      .timeout(
-        connTimeoutMs = 15.seconds.toMillis.toInt,
-        readTimeoutMs = 15.seconds.toMillis.toInt
-      )
       .headers(traceHeaders ++ authHeaders(Some(AuthToken(token))))
       .postData(body)
       .asString

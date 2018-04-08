@@ -5,8 +5,6 @@ import com.virtuslab._
 import org.json4s.jackson.Serialization.{read, write}
 import org.scalatra.ScalatraBase
 
-import scalaj.http._
-
 trait Authentication extends ScalatraBase with TraceIdSupport with HeadersSupport { this: RequestMetrics with Logging =>
 
   import org.json4s._

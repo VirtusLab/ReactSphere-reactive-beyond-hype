@@ -1,13 +1,13 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: run-load-tests-async
+  name: run-load-tests
   namespace: microservices
 spec:
   selector: {}
   template:
     metadata:
-      name: run-load-tests-async
+      name: run-load-tests
     spec:
       containers:
       - name: gatling
@@ -17,10 +17,10 @@ spec:
         # > AWS_ACCESS_KEY_ID
         # > AWS_SECRET_ACCESS_KEY
         env:
-          - name: TEST_SUBJECT_HOST
-            value: "auction-house-primary-async.microservices.svc.cluster.local"
-          - name: TEST_SUBJECT_PORT
-            value: "80"
+          - name: AUCTION_SERVICE_CONTACT_POINT
+            value: "auction-house-primary.microservices.svc.cluster.local"
+          - name: IDENTITY_SERVICE_CONTACT_POINT
+            value: "identity-service-tertiary.microservices.svc.cluster.local"
           - name: GATLING_USE_S3
             value: "false"
       restartPolicy: Never

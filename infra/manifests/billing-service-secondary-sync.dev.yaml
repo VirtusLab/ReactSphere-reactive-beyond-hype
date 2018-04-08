@@ -7,11 +7,11 @@ metadata:
 apiVersion: v1
 kind: Service
 metadata:
-  name: billing-service-secondary-sync
+  name: billing-service-secondary
   namespace: microservices
 spec:
   selector:
-    app: billing-service-secondary-sync
+    app: billing-service-secondary
   ports:
     - name: http
       protocol: TCP
@@ -21,7 +21,7 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: billing-service-secondary-sync
+  name: billing-service-secondary
   namespace: microservices
   annotations:
     kubernetes.io/ingress.class: "tectonic"
@@ -29,31 +29,31 @@ metadata:
 spec:
   tls:
   - hosts:
-      - billing-service-secondary-sync.local
+      - billing-service-secondary.local
   rules:
-  - host: billing-service-secondary-sync.local
+  - host: billing-service-secondary.local
     http:
       paths:
       - backend:
-          serviceName: billing-service-secondary-sync
+          serviceName: billing-service-secondary
           servicePort: 80
         path: /
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: billing-service-secondary-sync
+  name: billing-service-secondary
   namespace: microservices
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: billing-service-secondary-sync
+        app: billing-service-secondary
         monitoring-group: microservices-metrics
     spec:
       containers:
-        - name: billing-service-secondary-sync
+        - name: billing-service-secondary
           image: docker-registry.local/billing-service-secondary-sync
           resources:
             limits:
@@ -65,6 +65,16 @@ spec:
             - name: http_port
               value: "8080"
             - name: IDENTITY_SERVICE_CONTACT_POINT
-              value: "identity-service-tertiary-sync.microservices.svc.cluster.local"
+              value: "identity-service-tertiary.microservices.svc.cluster.local"
             - name: PAYMENT_SYSTEM_CONTACT_POINT
               value: "payment-system.microservices.svc.cluster.local"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws
+                  key: key
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws
+                  key: secret
