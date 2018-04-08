@@ -19,7 +19,7 @@ trait IdentityService {
 
   def signIn(request: SignInRequest)(implicit traceId: TraceId): Future[String]
 
-  def validateToken(token: String)(implicit traceId: TraceId): Future[Option[String]] // todo add traceId when Identity is a separate service
+  def validateToken(token: String)(implicit traceId: TraceId): Future[Option[String]]
 
   case class DuplicateUser(username: String) extends RuntimeException(username)
 

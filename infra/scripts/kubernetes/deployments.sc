@@ -53,7 +53,7 @@ def waitForDockerRegistry(implicit progressBar: ProgressBar): Unit = {
       %% curl(
         "-k", "-w", "%{http_code}",
         "-s", "-o", "/dev/null",
-        "https://docker-registry.local/v2/_catalog" // TODO url configurable
+        "https://docker-registry.local/v2/_catalog"
       )
     }
 
