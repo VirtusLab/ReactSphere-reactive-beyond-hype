@@ -136,7 +136,7 @@ There are two AWS Tectonic cluster configuration options available:
 1. You have to set additional environment variables to configure your deployment:
 
 ```
-CLUSTER // set to desired cluster name
+CLUSTER // set to desired cluster name: reactsphere-mini or reactsphere
 TF_VAR_tectonic_admin_email // set to desired admin account login
 TF_VAR_tectonic_admin_password // set to desired admin password
 ```
@@ -165,12 +165,12 @@ to continue broken deployment by performing delta of plan and existing state in
 AWS. When asked to confirm enter 'yes' and press enter. Deployment takes about 10
 minutes but then docker has to pull all the images and that elongates the process
 to about ~30-40 minutes. You can check if ApiServer is up with `kubectl get nodes`
-and also if Tectonic Console responds at `https://cluster-mini.beyondthehype.pl` or
-`https://cluster.beyondthehype.pl` respectively to cluster size chosen. Don't worry
-about DNS resolution errors - propagation takes a bit of time so if kubectl lists
-nodes correctly it's just a matter of time. When all nodes are in Ready state you
-can execute `kubectl get pods --all-namespaces` to monitor system and tectonic pod
-deployments.
+and also if Tectonic Console responds at `https://reactsphere-mini.beyondthehype.pl` 
+or `https://reactsphere.beyondthehype.pl` respectively to cluster size chosen. 
+Don't  worry about DNS resolution errors - propagation takes a bit of time so if 
+kubectl lists nodes correctly it's just a matter of time. When all nodes are in 
+Ready state you can execute `kubectl get pods --all-namespaces` to monitor system 
+and tectonic pod deployments.
 
 ---
  
