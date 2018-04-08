@@ -2,6 +2,7 @@ package com.virtuslab.billingsync
 
 import com.virtuslab.TraceId
 import com.virtuslab.base.sync.{Authentication, BaseServlet}
+import com.virtuslab.billingsync.S3Service.logAwsKeys
 import com.virtuslab.payments.payments.{Invoice, PaymentRequest}
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.{InternalServerError, Ok}
@@ -14,6 +15,8 @@ class BillingServlet extends BaseServlet with Authentication {
 
   protected lazy val service = new BillingService
   protected lazy val s3Service = new S3Service
+
+  logAwsKeys()
 
   before() {
     contentType = formats("json")
