@@ -83,7 +83,90 @@ Tectonic local setup is very similar to bare Docker setup. Just use the script:
 `amm infra/scripts/build-run-kubernetes.sc --stack sync`
 
 Arguments & flags are exactly the same as the ones for docker setup (so you can switch between sync / async etc).
- 
+
+### Deploying cluster to AWS
+
+##### Initial setup
+
+You will need:
+
+1. Tectonic licensing files:
+    * license.txt
+    * pull_secret.json
+    
+    Those can be obtained from coreos.com - free licence allows for clusters
+    with up to 10 nodes.
+    
+    You have to put those files into `./cluster` or `./cluster-mini` directory
+    depending on which cluster configuration you want to use.
+    
+2. AWS API key and secret:
+    You can create those for your account in AWS Console. When you have them
+    set those environment variables:
+    
+    ```
+    AWS_ACCESS_KEY_ID // self-explanatory
+    AWS_SECRET_ACCESS_KEY // self-explanatory
+    ```
+      
+3. Terraform tool installed
+
+4. Quay.io docker registry sign in token
+
+##### Cluster deployment configuration
+
+There are two AWS Tectonic cluster configuration options available:
+
+* cluster-mini: 4x t2.medium based development cluster consisting of:
+  - 1x t2.medium for etcd
+  - 1x t2.medium for master node
+  - 2x t2.medium for worker nodes
+  
+* cluster: large deployment designed to handle large traffic and full 
+  multi-pod replica sets
+  - 1x t2.medium for etcd
+  - 1x m4.large for master node
+  - 4x m4.large for worker nodes
+
+1. You have to set additional environment variables to configure your deployment:
+
+```
+CLUSTER // set to desired cluster name: reactsphere-mini or reactsphere
+TF_VAR_tectonic_admin_email // set to desired admin account login
+TF_VAR_tectonic_admin_password // set to desired admin password
+```
+
+2. Execute `docker login` to sign docker daemon into Quay.io registry.
+
+Gotchas:
+
+* Region configuration: if you want to override AWS region via `AWS_REGION`
+  environment variable remember to modify subnet configuration in 
+  `terraform.tfvars` file (it's the `tectonic_aws_master_custom_subnets`
+  and `tectonic_aws_worker_custom_subnets` vars, modify region and AZ only,
+  this configuration is required for single-AZ deployment and it's HIGHLY
+  RECOMMENDED to deploy to single AZ only due to incidental latencies problem
+  in cross-AZ clusters).
+  
+##### Cluster deployment
+
+Depending on cluster configuration you want to use go to either `./cluster` or
+`./cluster-mini` and execute `./boot.sh` script. If your config is correct
+terraform will initialize itself, validate deployment plan against AWS and then
+proceed to deployment. You will be asked to confirm deployment - there should be 
+136 elements to deploy for `cluster-mini` and few more for full `cluster` - this 
+number might be smaller if you are retrying failed deployment - terraform is able
+to continue broken deployment by performing delta of plan and existing state in
+AWS. When asked to confirm enter 'yes' and press enter. Deployment takes about 10
+minutes but then docker has to pull all the images and that elongates the process
+to about ~30-40 minutes. You can check if ApiServer is up with `kubectl get nodes`
+and also if Tectonic Console responds at `https://reactsphere-mini.beyondthehype.pl` 
+or `https://reactsphere.beyondthehype.pl` respectively to cluster size chosen. 
+Don't  worry about DNS resolution errors - propagation takes a bit of time so if 
+kubectl lists nodes correctly it's just a matter of time. When all nodes are in 
+Ready state you can execute `kubectl get pods --all-namespaces` to monitor system 
+and tectonic pod deployments.
+
 ---
  
 ### Testing microservices:
@@ -109,7 +192,7 @@ unsecure registries crashes daemon on startup in Docker for Mac you have to use 
 modify the json  ¯\_(ツ)_/¯).
 
 
-### Publishing to in-cluster Docker Registry:
+### Publishing to in-cluster Docker Registry (dev only):
 
 Tag images published locally to be able to push them to cluster registry:
 
@@ -137,13 +220,6 @@ docker:publish
 ```
 
 This will build docker image and publish it directly to cluster.
-
-### [FUTURE] Publishing to AWS in-cluster Docker Registry:
-
-Sbt build can be parameterised with system property `docker.registry.host`, which allows to pass host of registry
-different than `docker-registry.local`. Docker daemon has to be signed in (via `docker login` command) to given 
-registry beforehand. After that it will be possible to use 
-`./sbt -Ddocker.registry.host=https://prod.registry.domain.com docker:publish` to publish images to prod registry. 
 
 ### Running applications in cluster:
 
