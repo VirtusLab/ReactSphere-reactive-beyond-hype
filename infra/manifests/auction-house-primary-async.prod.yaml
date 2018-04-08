@@ -7,11 +7,11 @@ metadata:
 apiVersion: v1
 kind: Service
 metadata:
-  name: auction-house-primary-async
+  name: auction-house-primary
   namespace: microservices
 spec:
   selector:
-    app: auction-house-primary-async
+    app: auction-house-primary
   ports:
     - protocol: TCP
       port: 80
@@ -20,7 +20,7 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: auction-house-primary-async
+  name: auction-house-primary
   namespace: microservices
   annotations:
     kubernetes.io/ingress.class: "tectonic"
@@ -34,27 +34,27 @@ spec:
     http:
       paths:
       - backend:
-          serviceName: auction-house-primary-async
+          serviceName: auction-house-primary
           servicePort: 80
         path: /
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: auction-house-primary-async
+  name: auction-house-primary
   namespace: microservices
 spec:
   replicas: 1 #todo replicas
   template:
     metadata:
       labels:
-        app: auction-house-primary-async
+        app: auction-house-primary
         monitoring-group: microservices-metrics
     spec:
       nodeSelector:
         nodetype: microservices
       containers:
-        - name: auction-house-primary-async
+        - name: auction-house-primary
           image: quay.io/virtuslab/auction-house-primary-async
           resources:
             limits:
@@ -68,6 +68,6 @@ spec:
             - name: CASSANDRA_CONTACT_POINT
               value: "cassandra-0.cassandra.databases.svc.cluster.local"
             - name: BILLING_SERVICE_CONTACT_POINT
-              value: "billing-service-secondary-async.microservices.svc.cluster.local"
+              value: "billing-service-secondary.microservices.svc.cluster.local"
             - name: IDENTITY_SERVICE_CONTACT_POINT
-              value: "identity-service-tertiary-async.microservices.svc.cluster.local"
+              value: "identity-service-tertiary.microservices.svc.cluster.local"

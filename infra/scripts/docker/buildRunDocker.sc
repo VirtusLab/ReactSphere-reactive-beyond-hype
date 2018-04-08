@@ -123,8 +123,8 @@ private def buildEnvVariables(app: String)(implicit stackType: StackType): Seq[S
   val specificVars = app match {
     case a if a == s"${BILLING_APP}-${stackType.paradigm}" =>
       Seq(
-        s"AWS_ACCESS_KEY_ID=${Option(System.getenv("BILLING_WORKER_AWS_KEY")).getOrElse("AWS_ACCESS_KEY_NOT_SET")}",
-        s"AWS_SECRET_ACCESS_KEY=${Option(System.getenv("BILLING_WORKER_AWS_SECRET")).getOrElse("AWS_SECRET_NOT_SET")}"
+        s"AWS_ACCESS_KEY_ID=${awsKey}",
+        s"AWS_SECRET_ACCESS_KEY=${awsSecret}"
       )
     case a if a == s"${gatling}" =>
       Seq(

@@ -1,7 +1,9 @@
 import $file.^.common.display
+import $file.^.common.vars
 
 import ammonite.ops._
 import display.ProgressBar
+import vars._
 import scala.util.Try
 
 import scala.language.postfixOps
@@ -158,4 +160,38 @@ def tagNodes(): Unit = {
   appNodes foreach { node =>
     %kubectl("label", "nodes", node, "nodetype=microservices")
   }
+}
+
+def createNamespace(implicit progressBar: ProgressBar): Unit = {
+  progressBar.stepInto("Creating 'microservices' namespace")
+
+  implicit val wd: Path = pwd
+
+  Try(% kubectl("get", "namespace", "microservices")).recover {
+    case _ =>
+      % kubectl("create", "namespace", "microservices")
+  }
+
+  progressBar.finishedNamespace()
+}
+
+def createAwsCredentials(implicit progressBar: ProgressBar): Unit = {
+  progressBar.stepInto("Creating AWS secrets")
+
+  implicit val wd: Path = pwd
+
+  Try(% kubectl("get", "secret", "--namespace", "microservices", K8S_AWS_NAME)).map { _ =>
+    % kubectl("delete", "secret", "--namespace", "microservices", K8S_AWS_NAME)
+  }.recover {
+    case _ =>
+      println(s"Secret ${K8S_AWS_NAME} does not exist...")
+  }
+
+  println(s"Creating secrets: ${AWS_KEY_K8S_PROP} and ${AWS_SECRET_K8S_PROP}...")
+  % kubectl("create", "secret", "generic", "--namespace", "microservices", K8S_AWS_NAME,
+    s"--from-literal=${AWS_KEY_K8S_PROP}='${awsKey}'",
+    s"--from-literal=${AWS_SECRET_K8S_PROP}='${awsSecret}'"
+  )
+
+  progressBar.finishedNamespace()
 }

@@ -7,11 +7,11 @@ metadata:
 apiVersion: v1
 kind: Service
 metadata:
-  name: identity-service-tertiary-sync
+  name: identity-service-tertiary
   namespace: microservices
 spec:
   selector:
-    app: identity-service-tertiary-sync
+    app: identity-service-tertiary
   ports:
     - name: http
       protocol: TCP
@@ -21,7 +21,7 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: identity-service-tertiary-sync
+  name: identity-service-tertiary
   namespace: microservices
   annotations:
     kubernetes.io/ingress.class: "tectonic"
@@ -29,31 +29,31 @@ metadata:
 spec:
   tls:
   - hosts:
-      - identity-service-tertiary-sync.local
+      - identity-service-tertiary.local
   rules:
-  - host: identity-service-tertiary-sync.local
+  - host: identity-service-tertiary.local
     http:
       paths:
       - backend:
-          serviceName: identity-service-tertiary-sync
+          serviceName: identity-service-tertiary
           servicePort: 80
         path: /
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: identity-service-tertiary-sync
+  name: identity-service-tertiary
   namespace: microservices
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: identity-service-tertiary-sync
+        app: identity-service-tertiary
         monitoring-group: microservices-metrics
     spec:
       containers:
-        - name: identity-service-tertiary-sync
+        - name: identity-service-tertiary
           image: docker-registry.local/identity-service-tertiary-sync
           resources:
             limits:
