@@ -189,8 +189,8 @@ def createAwsCredentials(implicit progressBar: ProgressBar): Unit = {
 
   println(s"Creating secrets: ${AWS_KEY_K8S_PROP} and ${AWS_SECRET_K8S_PROP}...")
   % kubectl("create", "secret", "generic", "--namespace", "microservices", K8S_AWS_NAME,
-    s"--from-literal=${AWS_KEY_K8S_PROP}='${awsKey}'",
-    s"--from-literal=${AWS_SECRET_K8S_PROP}='${awsSecret}'"
+    s"--from-literal=${AWS_KEY_K8S_PROP}=${awsKey}",
+    s"--from-literal=${AWS_SECRET_K8S_PROP}=${awsSecret}"
   )
 
   progressBar.finishedNamespace()
