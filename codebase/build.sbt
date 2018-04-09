@@ -214,7 +214,8 @@ lazy val gatlingTests = (project in file("gatling-tests"))
       "org.json4s"                 %% "json4s-native"             % "3.6.0-M2",
       "com.typesafe"               %  "config"                    % "1.3.2",
       "org.apache.commons"         %  "commons-lang3"             % "3.7",
-      "com.amazonaws"              %  "aws-java-sdk-s3"           % "1.11.301"
+      "com.amazonaws"              %  "aws-java-sdk-s3"           % "1.11.301",
+      "com.github.pathikrit"       %% "better-files"              % "3.4.0"
     ),
     dockerCommands ++= installBashCommands,
     mainClass := Some("com.virtuslab.auctionHouse.perfTests.Runner")
