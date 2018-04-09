@@ -68,6 +68,6 @@ spec:
             - name: CASSANDRA_CONTACT_POINT
               value: "cassandra-0.cassandra.databases.svc.cluster.local"
             - name: BILLING_SERVICE_CONTACT_POINT
-              value: "billing-service-secondary-.microservices.svc.cluster.local"
+              value: "billing-service-secondary.microservices.svc.cluster.local"
             - name: IDENTITY_SERVICE_CONTACT_POINT
-              value: "identity-service-tertiary-.microservices.svc.cluster.local"
+              value: "identity-service-tertiary.microservices.svc.cluster.local"
