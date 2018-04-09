@@ -28,12 +28,12 @@ def printSplash(): Unit = {
   )
 }
 
-def printParams(stack: String, tests: Boolean, publish: Boolean, gattling: Boolean) = {
+def printParams(stack: String, tests: Boolean, publish: Boolean, gatling: Boolean) = {
   println(
     s"""Passed params are:
        |\tstack = $stack,
        |\ttests = $tests,
        |\tpublish = $publish,
-       |\tgattling = $gattling""".stripMargin
+       |\tgatling = $gatling""".stripMargin
   )
 }
