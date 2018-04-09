@@ -159,8 +159,17 @@ number might be smaller if you are retrying failed deployment - terraform is abl
 to continue broken deployment by performing delta of plan and existing state in
 AWS. When asked to confirm enter 'yes' and press enter. Deployment takes about 10
 minutes but then docker has to pull all the images and that elongates the process
-to about ~30-40 minutes. You can check if ApiServer is up with `kubectl get nodes`
-and also if Tectonic Console responds at `https://reactsphere-mini.beyondthehype.pl` 
+to about ~30-40 minutes. 
+
+After terraform is done you can use generated kubeconfig to access cluster via 
+`kubectl` tool. To do this you have to set environmental variable KUBECONFIG to
+path pointing to `(pwd)/cluster-mini/generated/auth/kubeconfig` or 
+`(pwd)/cluster/generated/auth/kubeconfig` respectively. Note the pwd in front of path
+- value of KUBECONFIG is meant to be full, non-relative path to `kubeconfig` file
+and therefore pwd means full path to the root of this project.
+
+You can check if ApiServer is up with `kubectl get nodes` and also if Tectonic 
+Console responds at `https://reactsphere-mini.beyondthehype.pl` 
 or `https://reactsphere.beyondthehype.pl` respectively to cluster size chosen. 
 Don't  worry about DNS resolution errors - propagation takes a bit of time so if 
 kubectl lists nodes correctly it's just a matter of time. When all nodes are in 
