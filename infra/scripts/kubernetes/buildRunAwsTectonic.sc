@@ -19,9 +19,6 @@ val requiredAliases = Seq(
   "payment"
 )
 
-// TODO document using $KUBECONFIG
-// TODO document cluster deployment and pre-deployment checks
-
 def performSetup(implicit stackType: StackType, steps: StepDefinitions): Unit = {
   implicit val progressBar = ProgressBar(System.out, "START", "Starting Tectonic cluster setup...")
   implicit val env = Prod
@@ -35,7 +32,7 @@ def performSetup(implicit stackType: StackType, steps: StepDefinitions): Unit = 
   buildStack(
     projects = apps.map(_._1),
     publishOpts = PublishOptions(
-      sbtTask = Publish, registry = Quay // TODO document Quay sign in
+      sbtTask = Publish, registry = Quay
     )
   )
 
