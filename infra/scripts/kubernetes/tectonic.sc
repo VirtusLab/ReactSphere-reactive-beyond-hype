@@ -154,11 +154,11 @@ def tagNodes(): Unit = {
   val (dbNodes, appNodes) = nodes.workers.splitAt(1) // single node
 
   dbNodes foreach { node =>
-    %kubectl("label", "nodes", node, "nodetype=datastore")
+    %kubectl("label", "nodes", node, "nodetype=datastore", "--overwrite=true")
   }
 
   appNodes foreach { node =>
-    %kubectl("label", "nodes", node, "nodetype=microservices")
+    %kubectl("label", "nodes", node, "nodetype=microservices", "--overwrite=true")
   }
 }
 
@@ -170,7 +170,7 @@ def createNamespace(implicit progressBar: ProgressBar): Unit = {
   Try(% kubectl("get", "namespace", "microservices")).recover {
     case _ =>
       % kubectl("create", "namespace", "microservices")
-  }
+  }.get
 
   progressBar.finishedNamespace()
 }
