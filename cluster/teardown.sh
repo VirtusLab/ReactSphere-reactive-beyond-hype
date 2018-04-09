@@ -25,3 +25,11 @@ if [ ! -f terraform.tfstate ]; then
 fi
 
 terraform destroy -var-file=terraform.tfvars platforms/aws
+
+if [ -f terraform.tfstate ]; then
+    mv terraform.tfstate "terraform.tfstate.destroyed-at-$(date +%s)"
+fi
+
+if [ -f terraform.tfstate.backup ]; then
+    mv terraform.tfstate.backup "terraform.tfstate.backup.destroyed-at-$(date +%s)"
+fi
