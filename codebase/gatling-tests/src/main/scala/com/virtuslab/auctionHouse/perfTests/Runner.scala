@@ -1,9 +1,6 @@
 package com.virtuslab.auctionHouse.perfTests
 
-import java.io.File
-
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
-import com.amazonaws.services.s3.transfer.TransferManagerBuilder
 import com.typesafe.scalalogging.Logger
 import com.virtuslab.Logging
 import io.gatling.app.Gatling
@@ -25,23 +22,35 @@ object Runner extends App with Logging {
 
   Gatling.fromMap(props.build)
 
-  val resultsDirectory = new File("results")
+  import better.files._
+
+  val resultsDirectory = File("results")
   println("Result directory generated:")
-  resultsDirectory.listFiles.foreach { file =>
-    println(s" > ${file.getAbsolutePath}")
+  resultsDirectory.list.foreach { file =>
+    println(s" > ${file.path}")
   }
 
-  println()
-
   if (Config.useS3) {
-    val transferManagerBuilder = TransferManagerBuilder.standard()
-    transferManagerBuilder.setS3Client(s3euWest1)
+    println("Upload of reports to S3 started...")
 
-    val transferManager = transferManagerBuilder.build()
-    val transfer = transferManager.uploadDirectory("reactsphere-results", "", resultsDirectory, true)
+    val resultsZipDirectory = file"/tmp/results"
+    resultsZipDirectory.createDirectory()
 
-    transfer.waitForCompletion()
-    transferManager.shutdownNow()
+    resultsDirectory.list.foreach { file =>
+      file.zipTo(file"/tmp/results/${file.path.getFileName}.zip")
+    }
+
+    println("Prepared all files: ")
+    resultsZipDirectory.list.foreach { file =>
+      println(s" > ${file.path}")
+    }
+
+    val s3Client = s3euWest1
+
+    resultsZipDirectory.list.foreach { file =>
+      println(s"Uploading ${file.path}...")
+      s3Client.putObject("reactsphere-results", file.name, file.toJava)
+    }
 
     println("Upload of reports to AWS S3 completed!")
   }
