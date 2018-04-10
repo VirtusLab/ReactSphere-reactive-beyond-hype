@@ -50,7 +50,6 @@ spec:
     metadata:
       labels:
         app: payment-system
-        monitoring-group: microservices-metrics
     spec:
       nodeSelector:
         nodetype: microservices

@@ -56,9 +56,10 @@ def performSetup(implicit stackType: StackType, steps: StepDefinitions): Unit = 
   // 8. Create AWS credentials
   createAwsCredentials
 
-  // 9. Deploy all microservices and wait for them to be up
+  // 9. Deploy monitoring
+  deployMetrics
+
+  // 10. Deploy all microservices and wait for them to be up
   deployAll(apps.map(_._1))
 
-  // 10. Deploy monitoring
-  deployMetrics
 }
