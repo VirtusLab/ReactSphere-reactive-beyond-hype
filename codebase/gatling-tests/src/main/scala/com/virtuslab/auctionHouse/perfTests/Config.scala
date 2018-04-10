@@ -14,5 +14,4 @@ object Config {
 
   lazy val auctionServiceContactPoint = s"${conf.getString("auctionService.contactPoint")}"
   lazy val identityServiceContactPoint = s"${conf.getString("identityService.contactPoint")}"
-  lazy val usersNo: Int = conf.getInt("usersNo")
 }
