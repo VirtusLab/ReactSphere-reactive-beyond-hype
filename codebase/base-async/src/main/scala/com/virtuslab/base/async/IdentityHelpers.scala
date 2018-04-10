@@ -28,7 +28,7 @@ trait IdentityHelpers extends DefaultJsonProtocol {
 
   private val identityUrl = s"http://${Config.identityServiceContactPoint}/api/v1/validate"
 
-  private val identityHttpClient = Http()
+  private lazy val identityHttpClient = Http()
 
   def validateToken(token: String)(implicit traceId: TraceId): Future[Option[String]] = {
     val json = ValidateTokenRequest(token).toJson.compactPrint

@@ -1,6 +1,7 @@
 package com.virtuslab.auctionhouse.primaryasync
 
 import akka.actor.ActorSystem
+import akka.stream.Materializer
 import com.datastax.driver.core.utils.UUIDs
 import com.typesafe.scalalogging.Logger
 import com.virtuslab.auctionhouse.cassandra.CassandraIntegrationTest
@@ -23,6 +24,8 @@ class AuctionServiceIntegrationTest extends WordSpec with Matchers with ScalaFut
   override protected def logger: Logger = Logger(getClass)
 
   override protected implicit def system: ActorSystem = ???
+
+  override protected implicit def materializer: Materializer = ???
 
   override protected def createBill(billRequest: PaymentRequest, token: String)(implicit traceId: TraceId): Future[Unit] = Future.successful()
 

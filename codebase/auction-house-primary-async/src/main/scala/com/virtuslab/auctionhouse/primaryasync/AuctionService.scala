@@ -97,7 +97,7 @@ trait AuctionServiceImpl extends AuctionService with SprayJsonSupport with Defau
 
   private implicit lazy val payRequestFormat: RootJsonFormat[PaymentRequest] = jsonFormat3(PaymentRequest)
 
-  private val billingHttpClient = Http()
+  private lazy val billingHttpClient = Http()
 
   def createAuction(command: CreateAuction)(implicit traceId: TraceId): Future[String] = {
     val auctionId = UUIDs.random()
