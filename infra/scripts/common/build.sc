@@ -1,8 +1,7 @@
 import $file.display
-
+import $file.vars
 import ammonite.ops._
 import display.ProgressBar
-import $file.vars
 import vars._
 
 private def directoryToProjectName(directoryName: String) = {
@@ -14,8 +13,8 @@ def appsInParadigm(implicit stackType: StackType, steps: StepDefinitions): Seq[(
   apps.map { a =>
     s"${a._1}-${stackType.paradigm}" -> a._2
   } ++
-  backingServices ++
-  ( if(steps.gatling) Seq(gatling -> -1) else Nil )
+    backingServices ++
+    (if (steps.gatling) Seq(gatling -> -1) else Nil)
 }
 
 def buildStack(projects: Seq[String], publishOpts: PublishOptions)
@@ -24,24 +23,25 @@ def buildStack(projects: Seq[String], publishOpts: PublishOptions)
   progressBar.stepInto("Build")
   progressBar.show("SBT build in progress..")
 
-  val sbtParams = projects.map { directory: String =>
+  val sbtParams = projects.flatMap { directory: String =>
     val project = directoryToProjectName(directory)
 
     Seq(
-      if(steps.tests) Option(s"$project/test") else None,
+      if (steps.tests) Option(s"$project/test") else None,
 
-      if(steps.publish) {
+      if (steps.publish) {
         val task = publishOpts.sbtTask
         Option(s"$project/docker:${task.name}")
       } else {
         None
       }
+
     ).flatten
-  }.flatten
+  }
 
   val registry = publishOpts.registry
   val params = Seq(s"-Ddocker.registry.host=${registry.value}", "coverageOff") ++ sbtParams
-  % sbt(Shellable(params))
+  % sbt Shellable(params)
 
   progressBar.finishedNamespace()
 }
