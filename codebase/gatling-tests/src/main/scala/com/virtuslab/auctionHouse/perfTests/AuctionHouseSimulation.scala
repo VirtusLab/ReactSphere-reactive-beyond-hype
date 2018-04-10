@@ -60,17 +60,18 @@ class AuctionHouseSimulation extends Simulation with RandomHelper with Logging {
 
   val bidInAuctionScenario = scenario("Bid in auction")
     .feed(biddersFeeder)
-    .exec(accounts.createAccount).pause(300 millis)
-    .exec(accounts.signIn).pause(300 millis)
-    .asLongAs(s => s(AuctionsActions.auctionsParam).asOption[AuctionsActions.Auctions]
-      .map(_.auctions.isEmpty)
-      .getOrElse(true) && s.status == OK) {
-        exec(auctions.listAuctions)
-          .pause(300 millis)
-          .exec(_.set(SessionConstants.category, randCategory))
+    .exec(accounts.createAccount).exitHereIfFailed.pause(300 millis)
+    .exec(accounts.signIn).exitHereIfFailed.pause(300 millis)
+    .asLongAs(s =>
+      s(AuctionsActions.auctionsParam).asOption[AuctionsActions.Auctions]
+        .map(_.auctions.isEmpty)
+        .getOrElse(true) && s.status == OK) {
+      exec(auctions.listAuctions)
+        .pause(300 millis)
+        .exec(_.set(SessionConstants.category, randCategory))
     }
-.exec(auctions.getAuction).pause(300 millis)
-    .exec(auctions.bidInAuction).pause(300 millis)
+    .exec(auctions.getAuction).exitHereIfFailed.pause(300 millis)
+    .exec(auctions.bidInAuction).exitHereIfFailed.pause(300 millis)
     .exec(auctions.payForAuction)
 
 
@@ -83,7 +84,7 @@ class AuctionHouseSimulation extends Simulation with RandomHelper with Logging {
 
   after({
     if (errorHandler.errors.nonEmpty) {
-      if(throwOnFailure) {
+      if (throwOnFailure) {
         throw new RuntimeException(s"There were exception while running scenario:\n${errorHandler.errors.mkString("\n")}")
       }
       log.warn(s"There were exception while running scenario:\n${errorHandler.errors.mkString("\n")}")
