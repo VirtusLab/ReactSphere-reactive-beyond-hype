@@ -1,7 +1,7 @@
 package com.virtuslab.base.async
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
+import akka.http.scaladsl.{Http => AHttp}
 import akka.http.scaladsl.server.Route
 import akka.stream.{ActorMaterializer, Materializer}
 import com.typesafe.scalalogging.Logger
@@ -26,7 +26,7 @@ abstract class BaseServer(defaultPort: Int = 8080) {
   def routes: Route
 
   def main(args: Array[String]) {
-    Http().bindAndHandle(routes, "0.0.0.0", port)
+    AHttp().bindAndHandle(routes, "0.0.0.0", port)
 
     logger.info(s"Server online at http://0.0.0.0:$port/")
 

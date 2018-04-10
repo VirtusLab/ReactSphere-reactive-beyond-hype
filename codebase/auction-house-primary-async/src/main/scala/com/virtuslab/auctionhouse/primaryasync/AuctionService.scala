@@ -6,16 +6,17 @@ import java.util.Objects.isNull
 import java.util.UUID
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.ContentTypes.`application/json`
 import akka.http.scaladsl.model.HttpMethods.POST
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.{HttpEntity, HttpRequest}
+import akka.stream.{ActorMaterializer, Materializer}
 import com.datastax.driver.core.querybuilder.QueryBuilder.{desc, insertInto, select, eq => equal}
 import com.datastax.driver.core.utils.UUIDs
 import com.datastax.driver.core.{ResultSet, Row, Session}
 import com.typesafe.scalalogging.Logger
+import com.virtuslab.base.async.Http
 import com.virtuslab.cassandra.CassandraClient
 import com.virtuslab.payments.payments.PaymentRequest
 import com.virtuslab.{Config, HeadersSupport, TraceId}
@@ -28,6 +29,8 @@ import scala.concurrent.{ExecutionContext, Future}
 trait AuctionService {
 
   protected implicit def system: ActorSystem
+
+  protected implicit def materializer: Materializer
 
   // errors
   case class AuctionNotFound(auctionId: String) extends RuntimeException(auctionId)
@@ -93,6 +96,8 @@ trait AuctionServiceImpl extends AuctionService with SprayJsonSupport with Defau
   private lazy val sessionFuture: Future[Session] = getSessionAsync
 
   private implicit lazy val payRequestFormat: RootJsonFormat[PaymentRequest] = jsonFormat3(PaymentRequest)
+
+  private val billingHttpClient = Http()
 
   def createAuction(command: CreateAuction)(implicit traceId: TraceId): Future[String] = {
     val auctionId = UUIDs.random()
@@ -217,7 +222,8 @@ trait AuctionServiceImpl extends AuctionService with SprayJsonSupport with Defau
       .withHeaders(RawHeader("X-Trace-Id", traceId.id))
       .withHeaders(RawHeader(AUTHORIZATION_KEYS.head, s"bearer $token"))
       .withEntity(entity)
-    Http().singleRequest(httpRequest).map { response =>
+
+    billingHttpClient.mapRequest(httpRequest) { response =>
       if (response.status.intValue() != 200) {
         logger.error(s"unexpected response: $response")
         throw new BillingServiceError()
