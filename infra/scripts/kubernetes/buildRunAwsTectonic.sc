@@ -60,6 +60,7 @@ def performSetup(implicit stackType: StackType, steps: StepDefinitions): Unit = 
   deployMetrics
 
   // 10. Deploy all microservices and wait for them to be up
+  createStackParadigmSecret
   deployAll(apps.map(_._1))
 
 }

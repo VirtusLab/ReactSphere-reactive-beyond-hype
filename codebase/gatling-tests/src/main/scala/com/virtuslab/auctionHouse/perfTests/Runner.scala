@@ -6,12 +6,16 @@ import com.virtuslab.Logging
 import io.gatling.app.Gatling
 import io.gatling.core.config.GatlingPropertiesBuilder
 
+import scala.collection.JavaConverters._
+
 object Runner extends App with Logging {
 
   override protected val log: Logger = Logger(getClass)
 
   log.info(s"Auction Service URL is: ${Config.auctionServiceContactPoint}")
   log.info(s"Identity Service URL is: ${Config.identityServiceContactPoint}")
+
+  val paradigm = System.getenv().asScala.apply("PARADIGM")
 
   log.info(s"Waiting (${Config.startDelay}) before starting Gatling tests...")
   Thread.sleep(Config.startDelay.toMillis)
@@ -37,7 +41,7 @@ object Runner extends App with Logging {
     resultsZipDirectory.createDirectory()
 
     resultsDirectory.list.foreach { file =>
-      file.zipTo(file"/tmp/results/${file.path.getFileName}.zip")
+      file.zipTo(file"/tmp/results/${file.path.getFileName}.$paradigm.zip")
     }
 
     println("Prepared all files: ")

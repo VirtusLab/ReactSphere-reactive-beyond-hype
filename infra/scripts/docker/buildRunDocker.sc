@@ -128,7 +128,8 @@ private def buildEnvVariables(app: String)(implicit stackType: StackType): Seq[S
       )
     case a if a == s"${gatling}" =>
       Seq(
-        s"GATLING_DELAY=${GATLING_DELAY}"
+        s"GATLING_DELAY=${GATLING_DELAY}",
+        s"PARADIGM=${stackType.paradigm}"
       )
     case _ =>
       Nil

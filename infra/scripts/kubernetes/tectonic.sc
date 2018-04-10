@@ -195,3 +195,15 @@ def createAwsCredentials(implicit progressBar: ProgressBar): Unit = {
 
   progressBar.finishedNamespace()
 }
+
+def createStackParadigmSecret(implicit progressBar: ProgressBar, stackType: StackType): Unit = {
+  progressBar stepInto "Creating stack type secret"
+
+  implicit val wd: Path = pwd
+
+  %kubectl("create", "secret", "generic", "--namespace", "microservices", STACK_PARADIGM,
+    s"--from-literal=$STACK_PARADIGM=${stackType.paradigm}"
+  )
+
+  progressBar.finishedNamespace()
+}

@@ -27,10 +27,15 @@ spec:
         env:
             # TODO MANIPULATE THIS
           - name: RAMP_UP_MAX
-            value: "100"
+            value: "2400"
             # TODO MANIPULATE THIS
           - name: RAMP_UP_TIME
             value: "300"
+          - name: PARADIGM
+            valueFrom:
+              secretKeyRef:
+                name: paradigm
+                key: paradigm
           - name: AUCTION_SERVICE_CONTACT_POINT
             value: "auction-house-primary.microservices.svc.cluster.local"
           - name: IDENTITY_SERVICE_CONTACT_POINT
