@@ -25,10 +25,12 @@ spec:
         image: quay.io/virtuslab/gatling-tests:latest
         imagePullPolicy: Always
         env:
+            # TODO MANIPULATE THIS
           - name: RAMP_UP_MAX
-            value: 100 # TODO MANIPULATE THIS
+            value: "100"
+            # TODO MANIPULATE THIS
           - name: RAMP_UP_TIME
-            value: 300 # TODO MANIPULATE THIS
+            value: "300"
           - name: AUCTION_SERVICE_CONTACT_POINT
             value: "auction-house-primary.microservices.svc.cluster.local"
           - name: IDENTITY_SERVICE_CONTACT_POINT
