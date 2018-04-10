@@ -1,7 +1,6 @@
 package com.virtuslab.base.async
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.ContentTypes.`application/json`
 import akka.http.scaladsl.model.HttpMethods.POST
 import akka.http.scaladsl.model.headers.RawHeader
@@ -29,6 +28,8 @@ trait IdentityHelpers extends DefaultJsonProtocol {
 
   private val identityUrl = s"http://${Config.identityServiceContactPoint}/api/v1/validate"
 
+  private lazy val identityHttpClient = Http()
+
   def validateToken(token: String)(implicit traceId: TraceId): Future[Option[String]] = {
     val json = ValidateTokenRequest(token).toJson.compactPrint
     val entity = HttpEntity(`application/json`, json)
@@ -36,7 +37,7 @@ trait IdentityHelpers extends DefaultJsonProtocol {
       .withHeaders(RawHeader("X-Trace-Id", traceId.id))
       .withEntity(entity)
 
-    Http().singleRequest(request).flatMap { response =>
+    identityHttpClient.flatMapRequest(request) { response =>
       if (response.status.isSuccess())
         response.entity
           .dataBytes
