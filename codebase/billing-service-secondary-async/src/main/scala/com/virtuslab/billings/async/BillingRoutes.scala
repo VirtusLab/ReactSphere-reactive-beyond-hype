@@ -1,6 +1,6 @@
 package com.virtuslab.billings.async
 
-import akka.http.scaladsl.Http
+
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.ContentTypes.`application/json`
 import akka.http.scaladsl.model.HttpMethods.POST
@@ -10,7 +10,7 @@ import akka.http.scaladsl.model.{HttpEntity, HttpRequest}
 import akka.http.scaladsl.server.Directives.{as, complete, entity, handleRejections, onComplete, optionalHeaderValueByName, path, post, _}
 import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.Logger
-import com.virtuslab.base.async.{IdentityHelpers, RoutesAuthSupport, RoutingUtils}
+import com.virtuslab.base.async.{Http, IdentityHelpers, RoutesAuthSupport, RoutingUtils}
 import com.virtuslab.payments.payments.{Invoice, PaymentRequest}
 import com.virtuslab.{Config, TraceId, TraceIdSupport}
 import io.prometheus.client.Histogram
@@ -32,6 +32,8 @@ trait BillingRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
 
   protected implicit def executionContext: ExecutionContext
 
+  lazy val httpClient = Http()
+
   lazy val paymentSystemUrl = s"http://${Config.paymentSystemContactPoint}/api/v1/payment"
 
   lazy val billingRoutes: Route = handleRejections(rejectionHandler) {
@@ -46,12 +48,10 @@ trait BillingRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
               val payRequest = HttpRequest(POST, paymentSystemUrl)
                               .withHeaders(RawHeader("X-Trace-Id", traceId.id))
                               .withEntity(HttpEntity(`application/json`, payFormat.write(request).compactPrint))
-
-              onComplete(for {
-                httpResponse <- Http().singleRequest(payRequest)
-                invoiceId <- if(httpResponse.status.isSuccess()) putInvoice(request) else failed(
+              onComplete(httpClient.flatMapRequest(payRequest) { httpResponse =>
+                if(httpResponse.status.isSuccess()) putInvoice(request) else failed(
                   new RuntimeException("Unexpected response from payment system"))
-              } yield invoiceId) {
+              }) {
                 case Success(invoiceId) =>
                   logger.info(s"[${traceId.id}] payment completed successfully")
                   histogramTimer.observeDuration()
@@ -61,7 +61,6 @@ trait BillingRoutes extends SprayJsonSupport with DefaultJsonProtocol with Routi
                   histogramTimer.observeDuration()
                   failWith(exception)
               }
-
             }
           }
         }
