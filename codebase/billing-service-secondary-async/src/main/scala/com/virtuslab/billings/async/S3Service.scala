@@ -14,8 +14,7 @@ import com.typesafe.scalalogging.Logger
 import com.virtuslab.Logging
 import com.virtuslab.payments.payments.PaymentRequest
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait S3Service extends Logging {
 
@@ -27,7 +26,7 @@ trait S3Service extends Logging {
   private val bucket = "reactsphere-billing-service-data"
   protected lazy val s3Client = new S3Client(S3Settings())
 
-  def putInvoice(data: PaymentRequest): Future[String] = {
+  def putInvoice(data: PaymentRequest)(implicit ec: ExecutionContext): Future[String] = {
     val timestamp = LocalDateTime.now().format(DateTimeFormatter.BASIC_ISO_DATE)
     val objectKey = s"${timestamp}_${data.payee}_${UUID.randomUUID()}"
     val s3Sink: Sink[ByteString, Future[MultipartUploadResult]] = s3Client.multipartUpload(bucket, objectKey)
