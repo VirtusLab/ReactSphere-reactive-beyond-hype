@@ -10,16 +10,17 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.ContentTypes.`application/json`
 import akka.http.scaladsl.model.HttpMethods.POST
 import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.{HttpEntity, HttpRequest}
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.http.scaladsl.model.{HttpEntity, HttpRequest, HttpResponse}
+import akka.http.scaladsl.{Http => AkkaHttp}
+import akka.stream.Materializer
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.datastax.driver.core.querybuilder.QueryBuilder.{desc, insertInto, select, eq => equal}
 import com.datastax.driver.core.utils.UUIDs
 import com.datastax.driver.core.{ResultSet, Row, Session}
 import com.typesafe.scalalogging.Logger
-import com.virtuslab.base.async.Http
 import com.virtuslab.cassandra.CassandraClient
 import com.virtuslab.payments.payments.PaymentRequest
-import com.virtuslab.{Config, HeadersSupport, TraceId}
+import com.virtuslab.{HeadersSupport, TraceId}
 import spray.json._
 
 import scala.collection.mutable.ArrayBuffer
@@ -96,8 +97,6 @@ trait AuctionServiceImpl extends AuctionService with SprayJsonSupport with Defau
   private lazy val sessionFuture: Future[Session] = getSessionAsync
 
   private implicit lazy val payRequestFormat: RootJsonFormat[PaymentRequest] = jsonFormat3(PaymentRequest)
-
-  private lazy val billingHttpClient = Http()
 
   def createAuction(command: CreateAuction)(implicit traceId: TraceId): Future[String] = {
     val auctionId = UUIDs.random()
@@ -214,20 +213,36 @@ trait AuctionServiceImpl extends AuctionService with SprayJsonSupport with Defau
     } yield ()
   }
 
+
+  private val billingConnecttionFlow: Flow[HttpRequest, HttpResponse, Future[AkkaHttp.OutgoingConnection]] = {
+    AkkaHttp().outgoingConnection("billing-service-secondary-async", 8090)
+  }
+
+  private def dispatchRequest(request: HttpRequest): Future[HttpResponse] = {
+    Source.single(request)
+      .via(billingConnecttionFlow)
+      .runWith(Sink.head)
+  }
+
   protected def createBill(billRequest: PaymentRequest, token: String)(implicit traceId: TraceId): Future[Unit] = {
-    val url = s"http://${Config.billingServiceContactPoint}/api/v1/billing"
+    //val url = s"http://${Config.billingServiceContactPoint}/api/v1/billing"
     val json = billRequest.toJson.compactPrint
     val entity = HttpEntity(`application/json`, json)
-    val httpRequest = HttpRequest(POST, url)
+    val httpRequest = HttpRequest(POST, "/api/v1/billing")
       .withHeaders(RawHeader("X-Trace-Id", traceId.id))
       .withHeaders(RawHeader(AUTHORIZATION_KEYS.head, s"bearer $token"))
       .withEntity(entity)
 
-    billingHttpClient.mapRequest(httpRequest) { response =>
-      if (response.status.intValue() != 200) {
-        logger.error(s"unexpected response: $response")
-        throw new BillingServiceError()
+    dispatchRequest(httpRequest).flatMap { httpResponse =>
+      val res: Future[Unit] = if (httpResponse.status.intValue() != 200) {
+        logger.error(s"unexpected response: $httpResponse")
+        failed(new RuntimeException("Unexpected response from payment system"))
+      } else {
+        successful(Unit)
       }
+      httpRequest.discardEntityBytes()
+      httpResponse.discardEntityBytes()
+      res
     }
   }
 
