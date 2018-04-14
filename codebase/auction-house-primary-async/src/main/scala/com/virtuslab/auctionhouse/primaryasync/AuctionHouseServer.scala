@@ -6,7 +6,7 @@ import com.virtuslab.base.async.BaseServer
 
 object AuctionHouseServer extends BaseServer(defaultPort = 8080) with Routes {
 
-  override protected val logger: Logger = Logger("AuctionHouse")
+  override protected val log: Logger = Logger("AuctionHouse")
 
   override lazy val cassandraContactPoint: String = Config.cassandraContactPoint
 

@@ -12,7 +12,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.datastax.driver.core.utils.UUIDs
 import com.typesafe.scalalogging.Logger
 import com.virtuslab.base.async.TestIdentityHelpers
-import com.virtuslab.{RequestMetrics, TraceId, TraceIdSupport}
+import com.virtuslab.{Logging, RequestMetrics, TraceId, TraceIdSupport}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterEach, GivenWhenThen, Matchers, WordSpec}
 
@@ -21,14 +21,14 @@ import scala.concurrent.ExecutionContext
 class AuctionHouseAsyncSpec extends WordSpec with Matchers with ScalaFutures with ScalatestRouteTest
   with GivenWhenThen with BeforeAndAfterEach
   with AuctionRoutes with TestAuctionServiceImpl with TestIdentityHelpers
-  with RequestMetrics with TraceIdSupport {
+  with RequestMetrics with TraceIdSupport with Logging {
 
   import com.virtuslab.auctions.Categories
   import spray.json._
 
   implicit val traceId: TraceId = TraceId(UUIDs.random().toString)
 
-  protected def logger: Logger = Logger(getClass)
+  override protected val log: Logger = Logger(getClass)
 
   protected def executionContext: ExecutionContext = system.dispatcher
 

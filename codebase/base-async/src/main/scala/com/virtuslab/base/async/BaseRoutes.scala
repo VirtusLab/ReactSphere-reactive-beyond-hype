@@ -4,18 +4,17 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
-import com.typesafe.scalalogging.Logger
+import com.virtuslab.Logging
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 trait BaseRoutes extends SprayJsonSupport with DefaultJsonProtocol {
+  this: Logging =>
 
   def serviceRoutes: Route
 
-  protected def logger: Logger
-
   lazy val routes: Route =
     path("_status") {
-      logger.info("Responding to status request.")
+      log.info("Responding to status request.")
       complete(Status())
     } ~ serviceRoutes
 

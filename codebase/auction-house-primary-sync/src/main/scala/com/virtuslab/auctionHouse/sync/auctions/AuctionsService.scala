@@ -46,7 +46,7 @@ class AuctionsService extends TraceIdSupport with Logging with HeadersSupport wi
 
   def listAuctions(category: String): Auctions = {
     assertCategory(category)
-    val auctions = usingCassandra(1) {
+    val auctions = cassandraTimingSync(1, "list_auctions") {
       auctionsMapper.map(session.execute(QueryBuilder.select().all().from("auctions")
         .where(QueryBuilder.eq("category", category)).limit(10)))
         .all().asScala.toList
@@ -62,12 +62,12 @@ class AuctionsService extends TraceIdSupport with Logging with HeadersSupport wi
       throw new UnknownEntityException(s"Cannot find owner: $owner")
     }
     val auction = new Auction(auctionRequest, owner)
-    usingCassandra(1) { auctionsMapper.save(auction) }
+    cassandraTimingSync(1, "create_auction") { auctionsMapper.save(auction) }
     auction.auction_id
   }
 
   def getAuction(id: UUID): AuctionViewResponse = {
-    usingCassandra(2) {
+    cassandraTimingSync(2, "get_auction") {
       auctionsViewMapper.map(session.execute(QueryBuilder.select().all().from("auctions_view")
         .where(QueryBuilder.eq("auction_id", id)))).asScala.headOption
         .map { auction =>
@@ -79,7 +79,7 @@ class AuctionsService extends TraceIdSupport with Logging with HeadersSupport wi
   }
 
   private def auctionExists(auctionId: UUID): Boolean = {
-    usingCassandra(1) {
+    cassandraTimingSync(1, "auction_exists") {
       1 == session.execute(QueryBuilder.select().countAll().from("auctions_view")
         .where(QueryBuilder.eq("auction_id", auctionId))).one().get(0, classOf[Long])
     }
@@ -88,12 +88,12 @@ class AuctionsService extends TraceIdSupport with Logging with HeadersSupport wi
   def bidInAuction(auctionId: UUID, bidValue: BigDecimal, bidder: String): Unit = {
     if(!auctionExists(auctionId)) throw new UnknownEntityException(s"Cannot find account: $bidder")
     if (!accountExists(bidder)) throw new UnknownEntityException(s"Cannot find account: $bidder")
-    val isMaxBid = usingCassandra(1) {
+    val isMaxBid = cassandraTimingSync(1, "bid_in_auction") {
       bidsMapper.map(session.execute(QueryBuilder.select().all().from("bids")
         .where(QueryBuilder.eq("auction_id", auctionId)))).asScala.forall(b => BigDecimal(b.amount) < bidValue)
     }
     if (isMaxBid) {
-      usingCassandra(1) {
+      cassandraTimingSync(1, "save_max_bid") {
         bidsMapper.save(new Bid(auctionId, UUIDs.timeBased(), bidder, bidValue.bigDecimal))
       }
     } else {

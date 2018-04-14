@@ -233,6 +233,7 @@ lazy val root = (project in file("."))
     baseSync, baseAsync,
     auctionHousePrimarySync, auctionHousePrimaryAsync,
     billingServiceSecondarySync, billingServiceSecondaryAsync,
+    identityServiceTertiarySync, identityServiceTertiaryAsync,
     paymentSystem,
     gatlingTests
   )

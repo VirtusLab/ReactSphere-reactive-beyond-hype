@@ -2,7 +2,7 @@ package com.virtuslab
 
 import io.prometheus.client.Histogram
 
-trait RequestMetrics {
+trait RequestMetrics { this: Logging =>
 
   protected lazy val requestsLatency: Histogram = Metrics.requestsLatencyHistogram
 
@@ -13,5 +13,4 @@ trait RequestMetrics {
 
     result
   }
-
 }
