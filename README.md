@@ -311,3 +311,18 @@ To run tests make sure that server is started and correct address is pointed in 
 ```bash
 ./sbt gatling:test
 ```
+
+You can run tests in 2 modes:
+**heavyside** - it's using gatling heavyside function, you can parametrize it with system variables:
+* `INJECT_AT_ONCE_MODE` - should be false or undefined to allow this mode
+* `RAMP_UP_MAX` - amount of users injected while whole simulation
+* `RAMP_UP_TIME` - time of simulation (in secs)
+
+**inject at once** - it's injecting given amount of users at once and waits until given time period between requests:
+* `INJECT_AT_ONCE_MODE` - should be true to allow this mode
+* `RAMP_UP_MAX` - amount of users injected at once
+* `RAMP_UP_TIME` - time of waiting between requests (in secs)
+
+
+
+
