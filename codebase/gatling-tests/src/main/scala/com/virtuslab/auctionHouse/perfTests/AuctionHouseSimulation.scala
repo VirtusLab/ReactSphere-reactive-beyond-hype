@@ -10,7 +10,6 @@ import org.json4s.jackson.JsonMethods.parse
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
-import scala.util.Try
 
 class AuctionHouseSimulation extends Simulation with RandomHelper with Logging {
 
@@ -138,7 +137,7 @@ class AuctionHouseSimulation extends Simulation with RandomHelper with Logging {
   val scenarios = injectionMode match {
     case InjectionMode.Heavyside => Seq(
       createAuctionHeavysideScenario.inject(heavisideUsers(rampUpMax).over(rampUpDurationSecs seconds)).protocols(httpConf),
-      createAuctionHeavysideScenario.inject(heavisideUsers(rampUpMax).over(rampUpDurationSecs seconds)).protocols(httpConf)
+      bidInAuctionHeavysideScenario.inject(heavisideUsers(rampUpMax).over(rampUpDurationSecs seconds)).protocols(httpConf)
     )
     case InjectionMode.RampUp => Seq(
       createAuctionScenario.inject(rampUsers(rampUpMax).over(rampUpDurationSecs seconds)).protocols(httpConf),
