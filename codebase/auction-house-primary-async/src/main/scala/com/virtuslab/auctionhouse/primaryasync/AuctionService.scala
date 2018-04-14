@@ -11,16 +11,14 @@ import akka.http.scaladsl.model.ContentTypes.`application/json`
 import akka.http.scaladsl.model.HttpMethods.POST
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.{HttpEntity, HttpRequest}
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.Materializer
 import com.datastax.driver.core.querybuilder.QueryBuilder.{desc, insertInto, select, eq => equal}
 import com.datastax.driver.core.utils.UUIDs
 import com.datastax.driver.core.{ResultSet, Row, Session}
-import com.typesafe.scalalogging.Logger
+import com.virtuslab._
 import com.virtuslab.base.async.Http
 import com.virtuslab.cassandra.CassandraClient
 import com.virtuslab.payments.payments.PaymentRequest
-import com.virtuslab.{CassandraQueriesMetrics, Config, HeadersSupport, TraceId}
-import io.prometheus.client.Gauge
 import spray.json._
 
 import scala.collection.mutable.ArrayBuffer
@@ -86,21 +84,17 @@ trait AuctionService {
 }
 
 trait AuctionServiceImpl extends AuctionService with SprayJsonSupport with DefaultJsonProtocol with HeadersSupport {
-  this: CassandraClient with CassandraQueriesMetrics =>
+  this: CassandraClient with CassandraQueriesMetrics with Logging =>
 
   import com.virtuslab.AsyncUtils.Implicits._
 
   protected implicit def executionContext: ExecutionContext
-
-  protected def logger: Logger
 
   private lazy val sessionFuture: Future[Session] = getSessionAsync
 
   private implicit lazy val payRequestFormat: RootJsonFormat[PaymentRequest] = jsonFormat3(PaymentRequest)
 
   private lazy val billingHttpClient = Http()
-
-  protected def cassandraQueries: Gauge
 
   def createAuction(command: CreateAuction)(implicit traceId: TraceId): Future[String] = {
     val auctionId = UUIDs.random()
@@ -115,17 +109,12 @@ trait AuctionServiceImpl extends AuctionService with SprayJsonSupport with Defau
       .value("details", command.details.compactPrint)
       .value("minimum_price", command.minimumPrice.bigDecimal)
 
-    cassandraQueries.inc()
-    val future = for {
-      session <- sessionFuture
-      _ <- session.executeAsync(query).asScala
-    } yield auctionId.toString
-
-    future.onComplete { _ =>
-      cassandraQueries.dec()
+    cassandraTimingAsync(1, "create_auction)") {
+      for {
+        session <- sessionFuture
+        _ <- session.executeAsync(query).asScala
+      } yield auctionId.toString
     }
-
-    future
   }
 
   def listAuctions(category: String)(implicit traceId: TraceId): Future[List[AuctionInfo]] = {
@@ -143,17 +132,12 @@ trait AuctionServiceImpl extends AuctionService with SprayJsonSupport with Defau
       BigDecimal(row.getDecimal("minimum_price"))
     )
 
-    cassandraQueries.inc()
-    val future = for {
-      session <- sessionFuture
-      auctionInfoesFuture <- aggregateAll(session.executeAsync(query).asScala, ArrayBuffer.empty, auctionInfoFromRow)
-    } yield auctionInfoesFuture
-
-    future.onComplete { _ =>
-      cassandraQueries.dec()
+    cassandraTimingAsync(1, "list_auction)") {
+      for {
+        session <- sessionFuture
+        auctionInfoesFuture <- aggregateAll(session.executeAsync(query).asScala, ArrayBuffer.empty, auctionInfoFromRow)
+      } yield auctionInfoesFuture
     }
-
-    future
   }
 
   def getAuction(auctionId: String)(implicit traceId: TraceId): Future[AuctionResponse] = {
@@ -183,20 +167,14 @@ trait AuctionServiceImpl extends AuctionService with SprayJsonSupport with Defau
         .fold[Future[AuctionResponse]](failed(AuctionNotFound(auctionId)))(successful)
     }
 
-    cassandraQueries.inc(2)
-
-    val future = for {
-      session <- sessionFuture
-      auctionRs <- session.executeAsync(auctionQuery).asScala
-      bids <- aggregateAll(session.executeAsync(bidsQuery(auctionIdUuid)).asScala, ArrayBuffer.empty, transformBid)
-      auction <- transformAuctionResultSet(auctionRs, bids)
-    } yield auction
-
-    future.onComplete { _ =>
-      cassandraQueries.dec(2)
+    cassandraTimingAsync(2, "get_auction") {
+      for {
+        session <- sessionFuture
+        auctionRs <- session.executeAsync(auctionQuery).asScala
+        bids <- aggregateAll(session.executeAsync(bidsQuery(auctionIdUuid)).asScala, ArrayBuffer.empty, transformBid)
+        auction <- transformAuctionResultSet(auctionRs, bids)
+      } yield auction
     }
-
-    future
   }
 
   def bidInAuction(command: BidInAuction)(implicit traceId: TraceId): Future[Unit] = {
@@ -221,36 +199,24 @@ trait AuctionServiceImpl extends AuctionService with SprayJsonSupport with Defau
         }
     }
 
-    cassandraQueries.inc(2)
-    val future = for {
-      session <- sessionFuture
-      _ <- verifyBidAmountIsHighest(session.executeAsync(bidsQuery(auctionId)).asScala)
-      _ <- session.executeAsync(insertBidQuery).asScala // todo maybe check if applied?
-    } yield ()
-
-    future.onComplete { _ =>
-      cassandraQueries.dec(2)
+    cassandraTimingAsync(2, "bid_in_auction") {
+      for {
+        session <- sessionFuture
+        _ <- verifyBidAmountIsHighest(session.executeAsync(bidsQuery(auctionId)).asScala)
+        _ <- session.executeAsync(insertBidQuery).asScala // todo maybe check if applied?
+      } yield ()
     }
-
-    future
   }
 
 
   def payForAuction(auctionId: String, bidder: String, token: String)(implicit traceId: TraceId): Future[Unit] = {
     val bidsOrder = Ordering.by((_: Bid).amount)
-    cassandraQueries.inc()
-    val future = for {
+    for {
       auction <- getAuction(auctionId)
       maxBid <- auction.bids.reduceOption(bidsOrder.max).filter(_.bidder == bidder)
         .map(successful).getOrElse(failed(NotActionWinner(bidder, auctionId)))
       _ <- createBill(PaymentRequest(bidder, auction.owner, maxBid.amount), token)
     } yield ()
-
-    future.onComplete { _ =>
-      cassandraQueries.dec()
-    }
-
-    future
   }
 
   protected def createBill(billRequest: PaymentRequest, token: String)(implicit traceId: TraceId): Future[Unit] = {
@@ -264,7 +230,7 @@ trait AuctionServiceImpl extends AuctionService with SprayJsonSupport with Defau
 
     billingHttpClient.mapRequest(httpRequest) { response =>
       if (response.status.intValue() != 200) {
-        logger.error(s"unexpected response: $response")
+        log.error(s"unexpected response: $response")
         throw new BillingServiceError()
       }
     }

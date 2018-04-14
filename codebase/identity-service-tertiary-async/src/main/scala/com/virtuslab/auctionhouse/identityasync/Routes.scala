@@ -3,14 +3,14 @@ package com.virtuslab.auctionhouse.identityasync
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.Logger
-import com.virtuslab.RequestMetrics
+import com.virtuslab.{Logging, RequestMetrics}
 import com.virtuslab.base.async.{BaseRoutes, RoutingUtils}
 import com.virtuslab.cassandra.CassandraClientImpl
 
 trait Routes extends BaseRoutes
   with IdentityRoutes with IdentityServiceImpl
   with RoutingUtils with CassandraClientImpl
-  with RequestMetrics {
+  with RequestMetrics with Logging {
 
   protected def logger: Logger
 

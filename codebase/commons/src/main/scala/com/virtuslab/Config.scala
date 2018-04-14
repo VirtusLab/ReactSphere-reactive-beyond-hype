@@ -14,6 +14,9 @@ object Config {
   lazy val httpResponseTimeout: Int = conf.getInt("http.responseTimeout")
   lazy val httpConnectionTimeout: Int = conf.getInt("http.connectionTimeout")
 
+  lazy val jettyBlockingTimout: Int = conf.getInt("jetty.blocking-timout")
+  lazy val jettyIdleTimout: Int = conf.getInt("jetty.idle-timout")
+
   def logAwsKeys(log: Logger, obfuscate: Boolean = true): Unit = {
     val key = Option(System.getenv("AWS_ACCESS_KEY_ID"))
     val secret = Option(System.getenv("AWS_SECRET_ACCESS_KEY"))

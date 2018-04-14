@@ -4,8 +4,8 @@ import java.util.concurrent.Executors
 import java.util.{Timer, TimerTask}
 
 import com.datastax.driver.core.exceptions.{InvalidQueryException, NoHostAvailableException}
-import com.datastax.driver.core.{Cluster, ResultSet, Row, Session}
-import com.typesafe.scalalogging.Logger
+import com.datastax.driver.core.{Cluster, Session}
+import com.virtuslab.Logging
 
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.Try
@@ -19,6 +19,7 @@ trait CassandraClient {
 }
 
 trait CassandraClientImpl extends CassandraClient {
+  this: Logging =>
 
   import com.virtuslab.AsyncUtils.Implicits._
 
@@ -27,8 +28,6 @@ trait CassandraClientImpl extends CassandraClient {
   private val testQuery = "SELECT * FROM system_schema.keyspaces;"
 
   def cassandraContactPoint: String
-
-  protected def logger: Logger
 
   def connectWithRetries(retriesLeft: Int): Future[Session] = {
     import CassandraDriverHelpers._
@@ -44,10 +43,11 @@ trait CassandraClientImpl extends CassandraClient {
 
     sessionFutureOrError.recoverWith {
       case invalidQuery: InvalidQueryException if retriesLeft > 0 =>
-        logger.warn(s"Keyspace `microservices` doesn't seem to exist: ($invalidQuery), retrying in 5 sec. Retries left: $retriesLeft")
+        log.warn(s"Keyspace `microservices` doesn't seem to exist: ($invalidQuery), retrying in 5 sec. Retries " +
+          s"left: $retriesLeft")
         waitFor(5000).flatMap(_ => connectWithRetries(retriesLeft - 1))
       case noHostAvailable: NoHostAvailableException if retriesLeft > 0 =>
-        logger.warn(s"Cassandra cluster seems to be down: ($noHostAvailable), retrying in 5 sec. Retries left: $retriesLeft")
+        log.warn(s"Cassandra cluster seems to be down: ($noHostAvailable), retrying in 5 sec. Retries left: $retriesLeft")
         waitFor(5000).flatMap(_ => connectWithRetries(retriesLeft - 1))
     }
   }

@@ -34,11 +34,13 @@ class SignInServlet extends BaseServlet with CassandraQueriesMetrics {
     log.info(s"[${traceId.id}] Received sign in request for user '${signInReq.username}' ...")
 
     try {
-      usingCassandra(1)(accountsMapper.getOption(signInReq.username)).map(u =>
+      cassandraTimingSync(1, "sign_in") {
+        accountsMapper.getOption(signInReq.username)
+      }.map(u =>
         if (u.validatePassword(signInReq.password)) {
           val token = new Token(UUID.randomUUID().toString, u.username,
             new Date(Instant.now().plus(60, ChronoUnit.MINUTES).toEpochMilli))
-          usingCassandra(1) {
+          cassandraTimingSync(1, "save_token") {
             tokensMapper.save(token)
           }
           log.info(s"[${traceId.id}] Successful sign in for user '${signInReq.username}', responding with access token.")

@@ -6,14 +6,14 @@ import akka.http.scaladsl.server.AuthenticationFailedRejection.{CredentialsMissi
 import akka.http.scaladsl.server.Directives.{authenticateOAuth2Async, complete}
 import akka.http.scaladsl.server.directives.Credentials
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directive1, MissingQueryParamRejection, RejectionHandler}
-import com.typesafe.scalalogging.Logger
-import com.virtuslab.TraceId
+import com.virtuslab.{Logging, TraceId}
 import io.prometheus.client.Histogram
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 import scala.concurrent.Future
 
 trait RoutesAuthSupport extends SprayJsonSupport with DefaultJsonProtocol with IdentityHelpers {
+  this: Logging =>
 
   type AuthFunction = Credentials => Future[Option[String]]
 
@@ -37,8 +37,6 @@ trait RoutesAuthSupport extends SprayJsonSupport with DefaultJsonProtocol with I
   def authenticate(traceId: TraceId, authenticator: AuthFunction): Directive1[String] = {
     authenticateOAuth2Async(realm = "auction-house", authenticator)
   }
-
-  protected def logger: Logger
 
   def parseAuthHeader(authHeader: String): Option[String] = {
     val splitedHeader = authHeader.trim.split(" ", 2).map(_.trim)
