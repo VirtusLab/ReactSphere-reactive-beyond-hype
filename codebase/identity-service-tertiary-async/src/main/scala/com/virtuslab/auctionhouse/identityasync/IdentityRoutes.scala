@@ -8,14 +8,14 @@ import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import com.typesafe.scalalogging.Logger
 import com.virtuslab.base.async.RoutingUtils
 import com.virtuslab.identity._
-import com.virtuslab.{TraceId, TraceIdSupport}
+import com.virtuslab.{CassandraQueriesMetrics, TraceId, TraceIdSupport}
 import io.prometheus.client.Histogram
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 import scala.util.{Failure, Success}
 
 trait IdentityRoutes extends SprayJsonSupport with DefaultJsonProtocol
-  with RoutingUtils with TraceIdSupport {
+  with RoutingUtils with TraceIdSupport with CassandraQueriesMetrics {
   this: IdentityService =>
 
   implicit lazy val carFormat: RootJsonFormat[CreateAccountRequest] = jsonFormat2(CreateAccountRequest)

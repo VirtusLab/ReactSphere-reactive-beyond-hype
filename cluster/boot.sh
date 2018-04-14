@@ -23,4 +23,7 @@ terraform init -var-file=terraform.tfvars platforms/aws
 
 terraform plan -var-file=terraform.tfvars platforms/aws
 
+export TF_LOG=DEBUG
+export TF_LOG_PATH=$(pwd)/terraform-$(date +%F-%T).log
+
 terraform apply -var-file=terraform.tfvars platforms/aws

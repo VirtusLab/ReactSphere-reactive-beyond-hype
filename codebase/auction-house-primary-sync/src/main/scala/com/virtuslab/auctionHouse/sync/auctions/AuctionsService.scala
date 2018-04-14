@@ -22,7 +22,7 @@ import org.json4s.{DefaultFormats, Formats}
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.DurationInt
 
-class AuctionsService extends TraceIdSupport with Logging with HeadersSupport {
+class AuctionsService extends TraceIdSupport with Logging with HeadersSupport with CassandraQueriesMetrics {
 
   override val log = Logger(getClass.toString)
 
@@ -46,9 +46,11 @@ class AuctionsService extends TraceIdSupport with Logging with HeadersSupport {
 
   def listAuctions(category: String): Auctions = {
     assertCategory(category)
-    val auctions = auctionsMapper.map(session.execute(QueryBuilder.select().all().from("auctions")
-      .where(QueryBuilder.eq("category", category)).limit(10)))
-      .all().asScala.toList
+    val auctions = usingCassandra(1) {
+      auctionsMapper.map(session.execute(QueryBuilder.select().all().from("auctions")
+        .where(QueryBuilder.eq("category", category)).limit(10)))
+        .all().asScala.toList
+    }
     Auctions(category, auctions)
   }
 
@@ -60,32 +62,40 @@ class AuctionsService extends TraceIdSupport with Logging with HeadersSupport {
       throw new UnknownEntityException(s"Cannot find owner: $owner")
     }
     val auction = new Auction(auctionRequest, owner)
-    auctionsMapper.save(auction)
+    usingCassandra(1) { auctionsMapper.save(auction) }
     auction.auction_id
   }
 
   def getAuction(id: UUID): AuctionViewResponse = {
-    auctionsViewMapper.map(session.execute(QueryBuilder.select().all().from("auctions_view")
-      .where(QueryBuilder.eq("auction_id", id)))).asScala.headOption
-      .map { auction =>
-        val bids = bidsMapper.map(session.execute(QueryBuilder.select().all().from("bids")
-          .where(QueryBuilder.eq("auction_id", id)))).asScala.toSeq
-        AuctionViewResponse(auction, bids)
-      }.getOrElse(throw new EntityNotFoundException(s"Auction id = $id cannot be found"))
+    usingCassandra(2) {
+      auctionsViewMapper.map(session.execute(QueryBuilder.select().all().from("auctions_view")
+        .where(QueryBuilder.eq("auction_id", id)))).asScala.headOption
+        .map { auction =>
+          val bids = bidsMapper.map(session.execute(QueryBuilder.select().all().from("bids")
+            .where(QueryBuilder.eq("auction_id", id)))).asScala.toSeq
+          AuctionViewResponse(auction, bids)
+        }.getOrElse(throw new EntityNotFoundException(s"Auction id = $id cannot be found"))
+    }
   }
 
   private def auctionExists(auctionId: UUID): Boolean = {
-    1 == session.execute(QueryBuilder.select().countAll().from("auctions_view")
-      .where(QueryBuilder.eq("auction_id", auctionId))).one().get(0, classOf[Long])
+    usingCassandra(1) {
+      1 == session.execute(QueryBuilder.select().countAll().from("auctions_view")
+        .where(QueryBuilder.eq("auction_id", auctionId))).one().get(0, classOf[Long])
+    }
   }
 
   def bidInAuction(auctionId: UUID, bidValue: BigDecimal, bidder: String): Unit = {
     if(!auctionExists(auctionId)) throw new UnknownEntityException(s"Cannot find account: $bidder")
     if (!accountExists(bidder)) throw new UnknownEntityException(s"Cannot find account: $bidder")
-    val isMaxBid = bidsMapper.map(session.execute(QueryBuilder.select().all().from("bids")
-      .where(QueryBuilder.eq("auction_id", auctionId)))).asScala.forall(b => BigDecimal(b.amount) < bidValue)
+    val isMaxBid = usingCassandra(1) {
+      bidsMapper.map(session.execute(QueryBuilder.select().all().from("bids")
+        .where(QueryBuilder.eq("auction_id", auctionId)))).asScala.forall(b => BigDecimal(b.amount) < bidValue)
+    }
     if (isMaxBid) {
-      bidsMapper.save(new Bid(auctionId, UUIDs.timeBased(), bidder, bidValue.bigDecimal))
+      usingCassandra(1) {
+        bidsMapper.save(new Bid(auctionId, UUIDs.timeBased(), bidder, bidValue.bigDecimal))
+      }
     } else {
       throw new InvalidBidException("Bid value is not big enough")
     }

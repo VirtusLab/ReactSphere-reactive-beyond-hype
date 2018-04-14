@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.Logger
 import com.virtuslab.auctions.Categories
 import com.virtuslab.base.async.{IdentityHelpers, RoutesAuthSupport, RoutingUtils}
 import com.virtuslab.{HeadersSupport, TraceId, TraceIdSupport}
-import io.prometheus.client.Histogram
+import io.prometheus.client.{Gauge, Histogram}
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 import scala.concurrent.ExecutionContext

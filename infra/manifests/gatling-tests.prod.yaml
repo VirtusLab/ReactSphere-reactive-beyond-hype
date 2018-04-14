@@ -27,7 +27,7 @@ spec:
         env:
             # TODO MANIPULATE THIS
           - name: RAMP_UP_MAX
-            value: "2400"
+            value: "2300"
             # TODO MANIPULATE THIS
           - name: RAMP_UP_TIME
             value: "300"
