@@ -48,7 +48,7 @@ trait IdentityServiceImpl extends IdentityService {
       .ifNotExists()
 
 
-    cassandraTimingAsync(1, "createUser") {
+    cassandraTimingAsync(1, "create_account") {
       for {
         session <- sessionFuture
         rs <- session.executeAsync(query).asScala
