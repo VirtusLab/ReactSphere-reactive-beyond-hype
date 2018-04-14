@@ -55,12 +55,14 @@ class AuctionHouseSimulation extends Simulation with RandomHelper with Logging {
 
 
   val createAuctionScenario = scenario("Create auction")
+    .pause(0, 1 second)
     .feed(auctionCreatorsFeeder)
     .exec(accounts.createAccount).exitHereIfFailed.pause(300 millis)
     .exec(accounts.signIn).exitHereIfFailed.pause(300 millis)
     .exec(auctions.createAuction)
 
   val bidInAuctionScenario = scenario("Bid in auction")
+    .pause(0, 1 second)
     .feed(biddersFeeder)
     .exec(accounts.createAccount).exitHereIfFailed.pause(300 millis)
     .exec(accounts.signIn).exitHereIfFailed.pause(300 millis)
