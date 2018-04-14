@@ -45,7 +45,7 @@ metadata:
   name: payment-system
   namespace: microservices
 spec:
-  replicas: 1 # TODO decide if scale out?
+  replicas: 3 # TODO decide if scale out?
   template:
     metadata:
       labels:
@@ -58,7 +58,7 @@ spec:
           image: quay.io/virtuslab/payment-system
           resources:
             limits:
-              memory: "192Mi"
+              memory: "256Mi"
           ports:
             - containerPort: 8080
             - containerPort: 8081

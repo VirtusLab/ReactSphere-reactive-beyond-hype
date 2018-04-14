@@ -44,7 +44,7 @@ metadata:
   name: auction-house-primary
   namespace: microservices
 spec:
-  replicas: 1 #todo replicas
+  replicas: 3 #todo replicas
   template:
     metadata:
       labels:
@@ -58,7 +58,7 @@ spec:
           image: quay.io/virtuslab/auction-house-primary-sync
           resources:
             limits:
-              memory: "384Mi"
+              memory: "1Gi"
           ports:
             - containerPort: 8080
             - containerPort: 8081

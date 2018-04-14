@@ -4,12 +4,12 @@ import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.{Date, UUID}
 
-import com.datastax.driver.core.{ResultSet, Session}
 import com.datastax.driver.core.querybuilder.QueryBuilder.{insertInto, select, eq => equal}
+import com.datastax.driver.core.{ResultSet, Session}
 import com.typesafe.scalalogging.Logger
-import com.virtuslab.TraceId
 import com.virtuslab.cassandra.CassandraClient
 import com.virtuslab.identity._
+import com.virtuslab.{CassandraQueriesMetrics, TraceId}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -28,7 +28,7 @@ trait IdentityService {
 }
 
 trait IdentityServiceImpl extends IdentityService {
-  this: CassandraClient =>
+  this: CassandraClient with CassandraQueriesMetrics =>
 
   import com.virtuslab.AsyncUtils.Implicits._
 
@@ -46,12 +46,20 @@ trait IdentityServiceImpl extends IdentityService {
       .value("password", user.passwordHash)
       .ifNotExists()
 
-    for {
+    cassandraQueries.inc()
+
+    val future = for {
       session <- sessionFuture
       rs <- session.executeAsync(query).asScala
     } yield {
       if (!rs.one.getBool("[applied]")) throw DuplicateUser(user.username)
     }
+
+    future.onComplete { _ =>
+      cassandraQueries.dec()
+    }
+
+    future
   }
 
   def signIn(request: SignInRequest)(implicit traceId: TraceId): Future[String] = {
@@ -77,7 +85,8 @@ trait IdentityServiceImpl extends IdentityService {
       .value("username", request.username)
       .value("expires_at", timestamp)
 
-    for {
+    cassandraQueries.inc(2)
+    val future = for {
       session <- sessionFuture
       passwordHashRs <- session.executeAsync(fetchUserQuery).asScala
       user <- userOrMissingUser(request.username, passwordHashRs)
@@ -86,23 +95,36 @@ trait IdentityServiceImpl extends IdentityService {
       if (user validatePassword request.password) token
       else throw FailedSignIn(request.username)
     }
+
+    future.onComplete { _
+      cassandraQueries.dec(2)
+    }
+
+    future
   }
 
   def validateToken(token: String)(implicit traceId: TraceId): Future[Option[String]] = {
     val validateTokenQuery = select().all()
-        .from("microservices", "tokens")
-        .where(equal("bearer_token", token))
+      .from("microservices", "tokens")
+      .where(equal("bearer_token", token))
 
-    for {
+    cassandraQueries.inc()
+    val future = for {
       session <- sessionFuture
       tokenRs <- session.executeAsync(validateTokenQuery).asScala
     } yield {
+      cassandraQueries.dec()
       val now = new Date()
       Option(tokenRs.one())
         .filter(_.getTimestamp("expires_at") after now)
         .map(_.getString("username"))
     }
 
+    future.onComplete { _ =>
+      cassandraQueries.dec()
+    }
+
+    future
   }
 
 }

@@ -5,7 +5,7 @@ import akka.stream.Materializer
 import com.datastax.driver.core.utils.UUIDs
 import com.typesafe.scalalogging.Logger
 import com.virtuslab.auctionhouse.cassandra.CassandraIntegrationTest
-import com.virtuslab.TraceId
+import com.virtuslab.{CassandraQueriesMetrics, TraceId}
 import com.virtuslab.payments.payments.PaymentRequest
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{GivenWhenThen, Matchers, OptionValues, WordSpec}
@@ -16,7 +16,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 class AuctionServiceIntegrationTest extends WordSpec with Matchers with ScalaFutures with GivenWhenThen
-  with OptionValues with CassandraIntegrationTest with AuctionServiceImpl {
+  with OptionValues with CassandraIntegrationTest with AuctionServiceImpl with CassandraQueriesMetrics {
 
   implicit val executionContext: ExecutionContext = Implicits.global
   implicit val traceId: TraceId = TraceId(UUIDs.random().toString)

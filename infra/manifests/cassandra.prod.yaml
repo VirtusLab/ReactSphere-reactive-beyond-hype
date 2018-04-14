@@ -27,7 +27,7 @@ metadata:
     app: cassandra
 spec:
   serviceName: cassandra
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: cassandra
@@ -55,10 +55,10 @@ spec:
         resources:
           limits:
             cpu: "500m"
-            memory: 1536Mi
+            memory: 2304Mi
           requests:
            cpu: "400m"
-           memory: 1386Mi
+           memory: 1984Mi
         securityContext:
           capabilities:
             add:
@@ -72,9 +72,9 @@ spec:
               - nodetool drain
         env:
           - name: MAX_HEAP_SIZE
-            value: 1G
+            value: 1792M
           - name: HEAP_NEWSIZE
-            value: 256M
+            value: 768M
           - name: CASSANDRA_SEEDS
             value: "cassandra-0.cassandra.databases.svc.cluster.local"
           - name: CASSANDRA_CLUSTER_NAME

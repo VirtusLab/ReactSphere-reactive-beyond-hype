@@ -5,6 +5,7 @@ import java.time.temporal.ChronoUnit
 import java.util.{Date, UUID}
 
 import com.datastax.driver.mapping.Mapper
+import com.virtuslab.CassandraQueriesMetrics
 import com.virtuslab.auctionHouse.identitySync.cassandra.SessionManager.ScalaMapper
 import com.virtuslab.auctionHouse.identitySync.cassandra.{Account, SessionManager, Token}
 import com.virtuslab.base.sync.BaseServlet
@@ -12,7 +13,7 @@ import com.virtuslab.identity.{SignInRequest, TokenResponse}
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra._
 
-class SignInServlet extends BaseServlet {
+class SignInServlet extends BaseServlet with CassandraQueriesMetrics {
 
   override def servletName: String = "SignIn"
 
@@ -33,11 +34,13 @@ class SignInServlet extends BaseServlet {
     log.info(s"[${traceId.id}] Received sign in request for user '${signInReq.username}' ...")
 
     try {
-      accountsMapper.getOption(signInReq.username).map(u =>
+      usingCassandra(1)(accountsMapper.getOption(signInReq.username)).map(u =>
         if (u.validatePassword(signInReq.password)) {
           val token = new Token(UUID.randomUUID().toString, u.username,
             new Date(Instant.now().plus(60, ChronoUnit.MINUTES).toEpochMilli))
-          tokensMapper.save(token)
+          usingCassandra(1) {
+            tokensMapper.save(token)
+          }
           log.info(s"[${traceId.id}] Successful sign in for user '${signInReq.username}', responding with access token.")
           Ok(TokenResponse(token.bearer_token))
         } else {
