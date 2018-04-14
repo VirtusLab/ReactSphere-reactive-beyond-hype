@@ -18,11 +18,18 @@ class AuctionHouseSimulation extends Simulation with RandomHelper with Logging {
   val errorHandler = new ErrorHandler
   val throwOnFailure = false
 
+  object InjectionMode extends Enumeration {
+    type InjectionMode = Value
+    val Heavyside, RampUp, InjectAndWait = Value
+  }
+
   val systemVars = System.getenv().asScala
   val rampUpMax = systemVars.get("RAMP_UP_MAX").map(_.toInt).getOrElse(1)
   val rampUpDurationSecs = systemVars.get("RAMP_UP_TIME").map(_.toInt).getOrElse(60)
-  val injectAtOnceMode = systemVars.get("INJECT_AT_ONCE_MODE")
-    .flatMap(v => Try(v.toBoolean).toOption).getOrElse(false)
+  val injectionMode = systemVars.get("INJECTION_MODE").flatMap { m =>
+    InjectionMode.values.find(_.toString == m)
+  }.getOrElse(InjectionMode.RampUp)
+
 
   val auctionCreatorsFeeder = (0 until rampUpMax).map { _ =>
     val category = randCategory
@@ -33,7 +40,7 @@ class AuctionHouseSimulation extends Simulation with RandomHelper with Logging {
       SessionConstants.createAuctionRequest -> CreateAuctionRequest(category, randStr, randStr, randPosNum,
         parse(s"""{"$randStr": "$randStr"}"""))
     )
-  }.toArray
+  }.toArray.circular
 
   val biddersFeeder = (0 until rampUpMax).map { _ =>
     val category = randCategory
@@ -42,7 +49,7 @@ class AuctionHouseSimulation extends Simulation with RandomHelper with Logging {
       SessionConstants.password -> randStr,
       SessionConstants.category -> category
     )
-  }.toArray
+  }.toArray.circular
 
   val httpConf = http
     .acceptHeader("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8") // Here are the common headers
@@ -54,14 +61,14 @@ class AuctionHouseSimulation extends Simulation with RandomHelper with Logging {
   val auctions = new AuctionsActions(errorHandler)
 
 
-  val createAuctionScenario = scenario("Create auction")
+  val createAuctionHeavysideScenario = scenario("Create auction")
     .pause(0, 1 second)
     .feed(auctionCreatorsFeeder)
     .exec(accounts.createAccount).exitHereIfFailed.pause(300 millis)
     .exec(accounts.signIn).exitHereIfFailed.pause(300 millis)
     .exec(auctions.createAuction)
 
-  val bidInAuctionScenario = scenario("Bid in auction")
+  val bidInAuctionHeavysideScenario = scenario("Bid in auction")
     .pause(0, 1 second)
     .feed(biddersFeeder)
     .exec(accounts.createAccount).exitHereIfFailed.pause(300 millis)
@@ -78,8 +85,34 @@ class AuctionHouseSimulation extends Simulation with RandomHelper with Logging {
     .exec(auctions.bidInAuction).exitHereIfFailed.pause(300 millis)
     .exec(auctions.payForAuction)
 
-  val baseScenarios = Seq(createAuctionScenario.inject(heavisideUsers(rampUpMax).over(rampUpDurationSecs seconds)).protocols(httpConf),
-  bidInAuctionScenario.inject(heavisideUsers(rampUpMax).over(rampUpDurationSecs seconds)).protocols(httpConf))
+  val createAuctionScenario = scenario("Create auction")
+    .pause(0, 1 second)
+    .feed(auctionCreatorsFeeder)
+    .exec(accounts.createAccount).pause(300 millis)
+    .during(rampUpDurationSecs seconds) {
+      exec(accounts.signIn).pause(300 millis)
+        .exec(auctions.createAuction)
+    }
+
+  val bidInAuctionScenario = scenario("Bid in auction")
+    .pause(0, 1 second)
+    .feed(biddersFeeder)
+    .exec(accounts.createAccount).pause(300 millis)
+    .during(rampUpDurationSecs seconds) {
+      exec(accounts.signIn).pause(300 millis)
+        .asLongAs(s =>
+          s(AuctionsActions.auctionsParam).asOption[AuctionsActions.Auctions]
+            .map(_.auctions.isEmpty)
+            .getOrElse(true) && s.status == OK) {
+          exec(auctions.listAuctions)
+            .pause(300 millis)
+            .exec(_.set(SessionConstants.category, randCategory))
+        }
+        .exec(auctions.getAuction).pause(300 millis)
+        .exec(auctions.bidInAuction).pause(300 millis)
+        .exec(auctions.payForAuction)
+    }
+
 
   val basePause = rampUpDurationSecs seconds
 
@@ -102,18 +135,22 @@ class AuctionHouseSimulation extends Simulation with RandomHelper with Logging {
         .exec(auctions.bidInAuction).exitHereIfFailed.pause(basePause)
         .exec(auctions.payForAuction).inject(atOnceUsers(rampUpMax)).protocols(httpConf)
 
-  val scenarios = if (injectAtOnceMode) {
-    Seq(injectAndWaitScenario)
-  } else {
-    Seq(
-      createAuctionScenario.inject(heavisideUsers(rampUpMax).over(rampUpDurationSecs seconds)).protocols(httpConf),
-      bidInAuctionScenario.inject(heavisideUsers(rampUpMax).over(rampUpDurationSecs seconds)).protocols(httpConf)
+  val scenarios = injectionMode match {
+    case InjectionMode.Heavyside => Seq(
+      createAuctionHeavysideScenario.inject(heavisideUsers(rampUpMax).over(rampUpDurationSecs seconds)).protocols(httpConf),
+      createAuctionHeavysideScenario.inject(heavisideUsers(rampUpMax).over(rampUpDurationSecs seconds)).protocols(httpConf)
     )
+    case InjectionMode.RampUp => Seq(
+      createAuctionScenario.inject(rampUsers(rampUpMax).over(rampUpDurationSecs seconds)).protocols(httpConf),
+      bidInAuctionScenario.inject(rampUsers(rampUpMax).over(rampUpDurationSecs seconds)).protocols(httpConf)
+    )
+    case InjectionMode.InjectAndWait => Seq(injectAndWaitScenario)
   }
+
 
   setUp(scenarios: _*).assertions(
     global.successfulRequests.percent.gte(100)
-  )
+  ).maxDuration(if(injectionMode == InjectionMode.InjectAndWait) (rampUpDurationSecs seconds) * 20 else (rampUpDurationSecs seconds) * 5)
 
   after({
     if (errorHandler.errors.nonEmpty) {
