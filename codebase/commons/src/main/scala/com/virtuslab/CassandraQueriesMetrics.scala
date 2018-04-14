@@ -7,9 +7,9 @@ import scala.concurrent.{ExecutionContext, Future}
 trait CassandraQueriesMetrics {
   this: Logging =>
 
-  protected lazy val cassandraQuery: Gauge = Metrics.cassandraQueriesGauge
+  protected val cassandraQuery: Gauge = Metrics.cassandraQueriesGauge
 
-  private lazy val cassandraQueryLatencies: Histogram = Metrics.cassandraQueryLatencies
+  private val cassandraQueryLatencies: Histogram = Metrics.cassandraQueryLatencies
 
   protected def cassandraTimingSync[T](count: Int, label: String)(f: => T): T = {
     val timer = cassandraQueryLatencies.labels(label).startTimer()
@@ -24,18 +24,19 @@ trait CassandraQueriesMetrics {
     }
   }
 
-  protected def cassandraTimingAsync[T](count: Int, label: String)(f: => Future[T])
+  protected def cassandraTimingAsync[T](count: Int, label: String)(block: => Future[T])
                                        (implicit ec: ExecutionContext): Future[T] = {
     val timer = cassandraQueryLatencies.labels(label).startTimer()
     cassandraQuery.inc(count)
 
-    f.onComplete { _ =>
+    val futureExecution = block
+    futureExecution.onComplete { _ =>
       cassandraQuery.inc(count)
       val time = timer.observeDuration()
       log.info(s"Query [${label}] took ${time}")
     }
 
-    f
+    futureExecution
   }
 
 }

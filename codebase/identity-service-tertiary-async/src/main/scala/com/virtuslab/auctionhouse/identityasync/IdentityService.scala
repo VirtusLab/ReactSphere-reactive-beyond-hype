@@ -9,7 +9,7 @@ import com.datastax.driver.core.{ResultSet, Session}
 import com.typesafe.scalalogging.Logger
 import com.virtuslab.cassandra.CassandraClient
 import com.virtuslab.identity._
-import com.virtuslab.{CassandraQueriesMetrics, RequestMetrics, TraceId}
+import com.virtuslab.{CassandraQueriesMetrics, Logging, RequestMetrics, TraceId}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -35,7 +35,7 @@ trait IdentityServiceImpl extends IdentityService {
 
   protected implicit def executionContext: ExecutionContext
 
-  protected def logger: Logger
+  protected def log: Logger
 
   private lazy val sessionFuture: Future[Session] = getSessionAsync
 

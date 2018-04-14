@@ -2,8 +2,9 @@ package com.virtuslab.auctionhouse.identityasync
 
 import com.datastax.driver.core.utils.UUIDs
 import com.typesafe.scalalogging.Logger
-import com.virtuslab.TraceId
+import com.virtuslab.{CassandraQueriesMetrics, Logging, RequestMetrics, TraceId}
 import com.virtuslab.auctionhouse.cassandra.CassandraIntegrationTest
+import com.virtuslab.cassandra.CassandraClient
 import com.virtuslab.identity.{CreateAccountRequest, SignInRequest}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{GivenWhenThen, Matchers, OptionValues, WordSpec}
@@ -13,12 +14,13 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
 
 class IdentityServiceIntegrationTest extends WordSpec with Matchers with ScalaFutures with GivenWhenThen
-  with OptionValues with CassandraIntegrationTest with IdentityServiceImpl {
+  with OptionValues with CassandraIntegrationTest with IdentityServiceImpl with Logging with CassandraQueriesMetrics
+  with CassandraClient with RequestMetrics {
 
   implicit val executionContext: ExecutionContext = global
   implicit val traceId: TraceId = TraceId(UUIDs.random().toString)
 
-  override def logger: Logger = Logger(getClass)
+  override val log: Logger = Logger(getClass)
 
   "Identity service" should {
 
