@@ -17,7 +17,7 @@ abstract class BaseJettyLauncher(defaultPort: Int = 8080) extends Logging {
 
     val port = Option(portProperty).map(_.toInt).getOrElse(defaultPort)
     DefaultExports.initialize()
-    val metricsServer = new HTTPServer(defaultPort + 1)
+    val metricsServer = new HTTPServer(port + 1)
 
     val server = new Server
 
