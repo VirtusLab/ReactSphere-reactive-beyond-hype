@@ -1,26 +1,6 @@
 package com.virtuslab.auctionHouse.sync.auctions
 
-import java.util.UUID
 
-import com.datastax.driver.core.Session
-import com.datastax.driver.core.querybuilder.QueryBuilder
-import com.datastax.driver.core.utils.UUIDs
-import com.datastax.driver.mapping.Mapper
-import com.typesafe.scalalogging.Logger
-import com.virtuslab._
-import com.virtuslab.auctionHouse.sync.auctions.AuctionsService._
-import com.virtuslab.auctionHouse.sync.cassandra.SessionManager.ScalaMapper
-import com.virtuslab.auctionHouse.sync.cassandra._
-import com.virtuslab.auctionHouse.sync.commons.ServletModels
-import com.virtuslab.auctionHouse.sync.commons.ServletModels.{AuctionViewResponse, Auctions, CreateAuctionRequest, EntityNotFoundException}
-import com.virtuslab.auctions.Categories
-import com.virtuslab.base.sync.Http
-import com.virtuslab.payments.payments.PaymentRequest
-import org.json4s.jackson.Serialization.write
-import org.json4s.{DefaultFormats, Formats}
-
-import scala.collection.JavaConverters._
-import scala.concurrent.duration.DurationInt
 
 class AuctionsService extends TraceIdSupport with Logging with HeadersSupport with CassandraQueriesMetrics {
 
