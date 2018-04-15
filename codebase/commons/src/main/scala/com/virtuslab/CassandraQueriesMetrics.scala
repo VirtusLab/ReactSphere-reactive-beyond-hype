@@ -31,7 +31,7 @@ trait CassandraQueriesMetrics {
 
     val futureExecution = block
     futureExecution.onComplete { _ =>
-      cassandraQuery.inc(count)
+      cassandraQuery.dec(count)
       val time = timer.observeDuration()
       log.info(s"Query [${label}] took ${time}")
     }
