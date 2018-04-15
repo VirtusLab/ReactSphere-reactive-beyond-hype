@@ -20,7 +20,9 @@ class AccountsActions(errorHandler: ErrorHandler) extends BaseActions(errorHandl
       .post(url("accounts"))
       .header("Content-Type", "application/json")
       .body(StringBody("""{"username": "${username}", "password" : "${password}" }"""))
-      .check(status.is(201))
+      .check(
+        status.is(201).saveAs(SessionConstants.createAccountResponse)
+      )
   }
 
   def signIn = {

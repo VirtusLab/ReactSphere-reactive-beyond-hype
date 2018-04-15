@@ -48,4 +48,5 @@ object SessionConstants {
   val token = "token"
   val category = "category"
   val createAuctionRequest = "createAuctionRequest"
+  val createAccountResponse = "createAccountResponse"
 }
