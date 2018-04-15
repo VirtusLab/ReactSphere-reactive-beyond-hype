@@ -87,7 +87,9 @@ class AuctionHouseSimulation extends Simulation with RandomHelper with Logging {
   val createAuctionScenario = scenario("Create auction")
     .pause(0, 1 second)
     .feed(auctionCreatorsFeeder)
-    .exec(accounts.createAccount).exitHereIfFailed.pause(300 millis)
+    .asLongAs(_(SessionConstants.createAccountResponse).asOption[Int] != Some(201)) {
+      exec(accounts.createAccount).pause(1 second)
+    }
     .during(rampUpDurationSecs seconds) {
       exec(accounts.signIn).pause(300 millis)
         .exec(auctions.createAuction)
@@ -96,7 +98,9 @@ class AuctionHouseSimulation extends Simulation with RandomHelper with Logging {
   val bidInAuctionScenario = scenario("Bid in auction")
     .pause(0, 1 second)
     .feed(biddersFeeder)
-    .exec(accounts.createAccount).exitHereIfFailed.pause(300 millis)
+    .asLongAs(_(SessionConstants.createAccountResponse).asOption[Int] != Some(201)) {
+      exec(accounts.createAccount).pause(1 second)
+    }
     .during(rampUpDurationSecs seconds) {
       exec(accounts.signIn).pause(300 millis)
         .asLongAs(s =>
