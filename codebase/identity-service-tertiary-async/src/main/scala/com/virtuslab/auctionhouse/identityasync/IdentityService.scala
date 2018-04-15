@@ -3,13 +3,14 @@ package com.virtuslab.auctionhouse.identityasync
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.{Date, UUID}
+import scala.concurrent.Future.failed
 
 import com.datastax.driver.core.querybuilder.QueryBuilder.{insertInto, select, eq => equal}
 import com.datastax.driver.core.{ResultSet, Session}
 import com.typesafe.scalalogging.Logger
 import com.virtuslab.cassandra.CassandraClient
 import com.virtuslab.identity._
-import com.virtuslab.{CassandraQueriesMetrics, Logging, RequestMetrics, TraceId}
+import com.virtuslab.{CassandraQueriesMetrics, RequestMetrics, TraceId}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -42,19 +43,25 @@ trait IdentityServiceImpl extends IdentityService {
   def createUser(request: CreateAccountRequest)(implicit traceId: TraceId): Future[Unit] = {
     val user = request.createUser
 
-    val query = insertInto("microservices", "accounts")
+    val fetchUserQuery = select().all()
+      .from("microservices", "accounts")
+      .where(equal("username", user.username))
+
+    val createUserQuery = insertInto("microservices", "accounts")
       .value("username", user.username)
       .value("password", user.passwordHash)
-      .ifNotExists()
 
-
-    cassandraTimingAsync(1, "create_account") {
+    cassandraTimingAsync(2, "create_account") {
       for {
         session <- sessionFuture
-        rs <- session.executeAsync(query).asScala
-      } yield {
-        if (!rs.one.getBool("[applied]")) throw DuplicateUser(user.username)
-      }
+        fetchRs <- session.executeAsync(fetchUserQuery).asScala
+        _ <- {
+          if (Option(fetchRs.one()).isEmpty)
+            session.executeAsync(createUserQuery).asScala
+          else
+            failed(DuplicateUser(user.username))
+        }
+      } yield ()
     }
   }
 
