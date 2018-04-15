@@ -13,6 +13,9 @@ import scala.concurrent.duration._
 
 class AuctionHouseSimulation extends Simulation with RandomHelper with Logging {
 
+  val pauseMin = 5.millis
+  val pauseMax = 300.millis
+
   override protected val log = Logger(getClass)
   val errorHandler = new ErrorHandler
   val throwOnFailure = false
@@ -61,54 +64,54 @@ class AuctionHouseSimulation extends Simulation with RandomHelper with Logging {
 
 
   val createAuctionHeavysideScenario = scenario("Create auction")
-    .pause(0, 1 second)
+    .pause(pauseMin, pauseMax)
     .feed(auctionCreatorsFeeder)
-    .exec(accounts.createAccount).exitHereIfFailed.pause(300 millis)
-    .exec(accounts.signIn).exitHereIfFailed.pause(300 millis)
+    .exec(accounts.createAccount).exitHereIfFailed.pause(pauseMin, pauseMax)
+    .exec(accounts.signIn).exitHereIfFailed.pause(pauseMin, pauseMax)
     .exec(auctions.createAuction)
 
   val bidInAuctionHeavysideScenario = scenario("Bid in auction")
-    .pause(0, 1 second)
+    .pause(pauseMin, pauseMax)
     .feed(biddersFeeder)
-    .exec(accounts.createAccount).exitHereIfFailed.pause(300 millis)
-    .exec(accounts.signIn).exitHereIfFailed.pause(300 millis)
+    .exec(accounts.createAccount).exitHereIfFailed.pause(pauseMin, pauseMax)
+    .exec(accounts.signIn).exitHereIfFailed.pause(pauseMin, pauseMax)
     .asLongAs(s =>
       s(AuctionsActions.auctionsParam).asOption[AuctionsActions.Auctions]
         .map(_.auctions.isEmpty)
         .getOrElse(true) && s.status == OK) {
       exec(auctions.listAuctions)
-        .pause(300 millis)
+        .pause(pauseMin, pauseMax)
         .exec(_.set(SessionConstants.category, randCategory))
     }
-    .exec(auctions.getAuction).exitHereIfFailed.pause(300 millis)
-    .exec(auctions.bidInAuction).exitHereIfFailed.pause(300 millis)
+    .exec(auctions.getAuction).exitHereIfFailed.pause(pauseMin, pauseMax)
+    .exec(auctions.bidInAuction).exitHereIfFailed.pause(pauseMin, pauseMax)
     .exec(auctions.payForAuction)
 
   val createAuctionScenario = scenario("Create auction")
-    .pause(0, 1 second)
+    .pause(pauseMin, pauseMax)
     .feed(auctionCreatorsFeeder)
-    .exec(accounts.createAccount).pause(300 millis)
+    .exec(accounts.createAccount).pause(pauseMin, pauseMax)
     .during(rampUpDurationSecs seconds) {
-      exec(accounts.signIn).pause(300 millis)
+      exec(accounts.signIn).pause(pauseMin, pauseMax)
         .exec(auctions.createAuction)
     }
 
   val bidInAuctionScenario = scenario("Bid in auction")
     .pause(0, 1 second)
     .feed(biddersFeeder)
-    .exec(accounts.createAccount).pause(300 millis)
+    .exec(accounts.createAccount).pause(pauseMin, pauseMax)
     .during(rampUpDurationSecs seconds) {
-      exec(accounts.signIn).pause(300 millis)
+      exec(accounts.signIn).pause(pauseMin, pauseMax)
         .asLongAs(s =>
           s(AuctionsActions.auctionsParam).asOption[AuctionsActions.Auctions]
             .map(_.auctions.isEmpty)
             .getOrElse(true) && s.status == OK) {
           exec(auctions.listAuctions)
-            .pause(300 millis)
+            .pause(pauseMin, pauseMax)
             .exec(_.set(SessionConstants.category, randCategory))
         }
-        .exec(auctions.getAuction).pause(300 millis)
-        .exec(auctions.bidInAuction).pause(300 millis)
+        .exec(auctions.getAuction).pause(pauseMin, pauseMax)
+        .exec(auctions.bidInAuction).pause(pauseMin, pauseMax)
         .exec(auctions.payForAuction)
     }
 
