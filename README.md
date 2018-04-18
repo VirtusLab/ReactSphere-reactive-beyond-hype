@@ -6,6 +6,9 @@
        by Lukasz Bialy, Marcin Zagorski, Pawel Dolega @ VirtusLab 2018
        Repo for presentation on ReactSphere: Reactive beyond hype
 
+### [Check out the presentation itself](https://virtuslab.slides.com/pdolega/reactive-beyond-hype)
+
+
 ### Requirements (with install instructions:)
  * ammonite ( tested on ver. 1.0.x, http://ammonite.io/#Ammonite-REPL )
  * Docker ( tested on ver. 17.12.x, https://www.docker.com/get-docker , also make sure you start service e.g. `sudo systemctl start docker` and add your user to docker group `sudo usermod -a -G docker $YOUR_USER`)
